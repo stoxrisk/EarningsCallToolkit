@@ -1,0 +1,7 @@
+--index-url https://pypi.python.org/simple/
+git+https://github.com/JECSand/yahoofinancials.git
+seaborn
+scipy
+pandas
+numpy
+yahoofinancials
