@@ -58,11 +58,8 @@ class CalendarParser():
 			datestr = single_date.strftime("%Y%m%d")
 			self.dates.append(datestr)
 
-# Test with TESLA Data
-
-start_date = date(2018, 6, 13)
-end_date = date(2019, 8, 14)
-
+# Commands to create all the data in /dates
+# start_date = date(2018, 6, 13)
 # end_date = date(2019, 8, 14)
-cp = CalendarParser("white_list.txt","C:\\\\Users\\Andrew\\Google Drive\\Dropbox\\stox\\EarningsCallToolkit\\dates", start_date, end_date)
-cp.createMap()
+# cp = CalendarParser("white_list.txt","C:\\\\Users\\Andrew\\Google Drive\\Dropbox\\stox\\EarningsCallToolkit\\dates", start_date, end_date)
+# cp.createMap()
