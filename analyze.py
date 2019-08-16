@@ -26,29 +26,59 @@ class LineGraph:
 
 # ENTER: TSLA;DAY1-DAY2;9:30-16,16-20|4-9:30,9:30-16;30m
 # RETURN: [1,2,2,2]
-class PriceDifferenceRetriever:
-	def __init__(self, time_str):
-		self.retrieveDay = __timeStringParser(time_str)
+class IntraDayToolkit:
+	def __init__(self, api_key):
+		print("sda")
+		self.td_api = TDAmeritradeAPI(api_key)
+		print("sda2")
+		
+	def retrieveSelectedTimesDifferences(self, dates, times, ticker, candlestick):
+		start_date = datetime.strptime(dates[0], '%Y%m%d')
+		end_date = datetime.strptime(dates[len(dates)-1], '%Y%m%d')
+		# Translate candlestick
+		if candlestick == "30m":
+			freq_type = "minute"
+			freq_num = "30"
+		# Convert to miliseconds for api call
+		start_date = start_date.timestamp() * 1000
+		end_date = end_date.timestamp() * 1000
+		# Get all the data for this ticker
+		data_return = td_api.getPrices(ticker, freq_type, freq_num, start_date, end_date).content
+		print(data_return)
+		# for daydata in days:
 
-	def __timeStringParser(self, time_str):
-		days_times = time_str.split(";")
-		timeframe = days_times[1].split("-")
-		start_date = datetime.strptime(timeframe[0], '%Y%m%d')
-		end_date = datetime.strptime(timeframe[1], '%Y%m%d')
-		end_date = end_date + datetime.timedelta(days=1) # last day is not inclusive
-		intraday_timeframes = days_times[2].split("|")
-		for daydata in days:
-			getPrices
+	def priceDifferenceBetweenTimes(candle1, candle2):
+		pass
+	
 
 
-def afterMarketCallDifferenceStrategy(date):
+
+def afterMarketCallDifferenceStrategy(earnings_map, ticker_list):
+	tk = IntraDayToolkit(api_key)
+	after_market_strat_times = ["9:30-16,16-20", "4-9:30,9:30-16"]
+	for ticker in ticker_list:
+		for earningsdate in earningdate:
+			dateandtime = earningsdate.split(":")
+			# We only want to pay attention to stocks with after market close
+			if(dateandtime[1] is not "amc"):
+				return
+			# Setup dates
+			start_date = datetime.strptime(earningsdate[0], '%Y%m%d')
+			end_date = datetime.strptime(earningsdate[0], '%Y%m%d')
+			end_date = start_date + datetime.timedelta(days=1) # last day is not inclusive
+			dates = [start_date, end_date]
+			# Expected return [1.1,2.1,-1,2] in percentages
+			retrieveSelectedTimesDifferences(dates, after_market_strat_times, ticker, "30m")
+			# x_axis = ["intraday1", "aftermarket", "premarket", "intraday2"]
+			# lg = LineGraph(x_axis, "After market strategy")
 
 
-def beforeMarketCallDifferenceStrategy(date):
-	day_before = date - 1 
-	"TSLA;%s-%s-%s;9:30-20|4-9:30,9:30-16,16-20|4-9:30,9:30-16;30m"
+cp = CalendarParser("white_list.txt","C:\\\\Users\\Andrew\\Google Drive\\Dropbox\\stox\\EarningsCallToolkit\\dates")
+cp.loadCached(True)
+print(cp.earnings_map['AAPL'])
+afterMarketCallDifferenceStrategy(cp.earnings_map, ["AAPL"])
 
-def 
+
 # This strategy is to simply compare during day movement, after market movement, and 
 # before market movement the next day for earnings calls after market hours.
 # Then compare it against intraday ,movement the next day, once at 12pm and once at 4pm
@@ -58,42 +88,3 @@ def
 # Change after hours: -16%
 # Change before hours: -2%
 # Change next day: -2%
-def Strategy1():
-	["intraday", "post-market", "pre-market", "intra-day"]
-
-start_date = date(2018, 6, 13)
-end_date = date(2019, 8, 14)
-cp = CalendarParser("white_list.txt","C:\\\\Users\\Andrew\\Google Drive\\Dropbox\\stox\\EarningsCallToolkit\\dates", start_date, end_date)
-cp.loadCached(True)
-print(cp.earnings_map['AAPL'])
-
-#TIME FRAME: "DAY:(9:30-16,16-20);DAY:(4-9:30,9:30-16)"
-# "DIFFERENCE"
-	
-
-# Desired return output
-# ---------------------------- 
-# TSLA 2/5/19
-# Change during the day: 5%
-# Change after hours: -16%
-# Change next day: -2%
-# ----------------------------
-# Also present a visualization
-
-# Consider surprise factor?
-
-# Pull from list of tickets
-
-# for ticker in tickers:
-# 	data = EarningsData('5m', ticker, 4)
-# 	print('')
-
-# START_DATE = datetime.date(2004, 9, 25)
-# END_DATE = datetime.date(2004, 10, 8)
-# day = datetime.timedelta(days=1)
-
-# while START_DATE <= END_DATE:
-#     print START_DATE.strftime('%Y.%m.%d')
-#     START_DATE = START_DATE + day
-
-# yahoo_financials = YahooFinancials(ticker)

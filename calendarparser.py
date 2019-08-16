@@ -9,16 +9,15 @@ from datetime import timedelta, date
 
 
 class CalendarParser():
-	def __init__(self, filename, output_dir, start_date, end_date):
+	def __init__(self, filename, output_dir):
 		file = open(filename, "r")
 		text_list = file.read()
 		self.whitelist = text_list.split(",")
 		self.dir = os.path.join(output_dir)
-		self.getDates(start_date, end_date)
-		# loadCached()
 
 	# First time use
-	def pullandStoreEarningsDates(self):
+	def pullandStoreEarningsDates(self, start_date="20121101", end_date="20190815"):
+		self.getDates(start_date, end_date)
 		preferred_dir = self.dir + "\\preferred"
 		other_dir = self.dir + "\\other"
 		api_url = "https://api.earningscalendar.net/?date="
