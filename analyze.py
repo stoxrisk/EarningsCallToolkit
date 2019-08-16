@@ -1,5 +1,7 @@
 from yahoofinancials import YahooFinancials
 from tdameritradeapi import TDAmeritradeAPI
+from calendarparser import CalendarParser
+from datetime import timedelta, date
 import requests
 import os
 
@@ -37,7 +39,11 @@ class Strategy1():
 	def __init__():
 		pass
 
-CalendarParser("white_list.txt","C:\\Users\\Andrew\\Google Drive\\Dropbox\\stox\\EarningsCallToolkit")
+start_date = date(2018, 6, 13)
+end_date = date(2019, 8, 14)
+cp = CalendarParser("white_list.txt","C:\\\\Users\\Andrew\\Google Drive\\Dropbox\\stox\\EarningsCallToolkit\\dates", start_date, end_date)
+cp.loadCached(True)
+print(cp.earnings_map['AAAP'])
 
 # Desired return output
 # ---------------------------- 
@@ -56,12 +62,12 @@ CalendarParser("white_list.txt","C:\\Users\\Andrew\\Google Drive\\Dropbox\\stox\
 # 	data = EarningsData('5m', ticker, 4)
 # 	print('')
 
-START_DATE = datetime.date(2004, 9, 25)
-END_DATE = datetime.date(2004, 10, 8)
-day = datetime.timedelta(days=1)
+# START_DATE = datetime.date(2004, 9, 25)
+# END_DATE = datetime.date(2004, 10, 8)
+# day = datetime.timedelta(days=1)
 
-while START_DATE <= END_DATE:
-    print START_DATE.strftime('%Y.%m.%d')
-    START_DATE = START_DATE + day
+# while START_DATE <= END_DATE:
+#     print START_DATE.strftime('%Y.%m.%d')
+#     START_DATE = START_DATE + day
 
-yahoo_financials = YahooFinancials(ticker)
+# yahoo_financials = YahooFinancials(ticker)

@@ -15,11 +15,10 @@ class CalendarParser():
 		self.whitelist = text_list.split(",")
 		self.dir = os.path.join(output_dir)
 		self.getDates(start_date, end_date)
+		# loadCached()
 
 	# First time use
-	def createMap(self):
-		preferred_map = {}
-		other_map = {}
+	def pullandStoreEarningsDates(self):
 		preferred_dir = self.dir + "\\preferred"
 		other_dir = self.dir + "\\other"
 		api_url = "https://api.earningscalendar.net/?date="
@@ -43,8 +42,30 @@ class CalendarParser():
 			time.sleep(1)
 
 	# Second and Sequential Time use
-	def load_cached(self):
-		pass
+	def loadCached(self, not_preferred=False):
+		self.earnings_map = {}
+		preferred_dir = self.dir + "\\preferred"
+		other_dir = self.dir + "\\other"
+		file_list = os.listdir(preferred_dir)
+		for ticker_file in file_list:
+			with open(preferred_dir + "\\" + ticker_file, 'r') as file:
+				earnings_dates = file.read()
+			earnings_dates_list = earnings_dates.split(",")
+			ticker = ticker_file.split(".")[0]
+			self.earnings_map[ticker] = []
+			for earnings_date in earnings_dates_list:
+				self.earnings_map[ticker].append(earnings_date)
+
+		if(not_preferred):
+			file_list = os.listdir(other_dir)
+			for ticker_file in file_list:
+				with open(other_dir + "\\" + ticker_file, 'r') as file:
+					earnings_dates = file.read()
+				earnings_dates_list = earnings_dates.split(",")
+				ticker = ticker_file.split(".")[0]
+				self.earnings_map[ticker] = []
+				for earnings_date in earnings_dates_list:
+					self.earnings_map[ticker].append(earnings_date)
 
 	def getDates(self, start_date, end_date):
 		self.dates = []
