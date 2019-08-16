@@ -25,29 +25,29 @@ class LineGraph:
 	def show():
 		plt.show()
 
-# ENTER: TSLA;DAY1-DAY2;9:30-16,16-20|4-9:30,9:30-16;30m
-# RETURN: [1,2,2,2]
 class IntraDayToolkit:
 	def __init__(self, api_key):
 		self.td_api = TDAmeritradeAPI(api_key)
 
-	def __convertTimesMiliseconds(self, date, time):
+	def __convertTimesMiliseconds(self, time, date_for_time):
 		times_list = [] 
 		# reset for the 20 hour end day
-		date = date.replace(hour=0)
+		date_for_time = date_for_time.replace(hour=0)
 		for pull_time in time.split(","):
 			if pull_time == "9:30":
-				ret_time = ret_time + timedelta(hours=9, minutes=30)
+				ret_time = date_for_time + timedelta(hours=9, minutes=30)
 			else:
-				ret_time = ret_time + timedelta(hours=pull_time)
-			ret_time = date.timestamp() * 1000
-			times_list.append(str(ret_time))
+				ret_time = date_for_time + timedelta(hours=int(pull_time))
+			ret_time = date_for_time.timestamp() * 1000
+			times_list.append(str(int(ret_time)))
+
+		return times_list
 		
 
 	def retrieveSelectedTimesDifferences(self, dates, times, ticker, candlestick):
 		# Translate candlestick
 		if str(dates[0].year) != "2019":
-			return	 
+			return False
 		if candlestick == "30m":
 			freq_type = "minute"
 			freq_num = "30"
@@ -60,7 +60,6 @@ class IntraDayToolkit:
 		candles = data_return["candles"]
 		# no need for two seperate lists if using miliseconds, it incorporates days
 		milisecond_list = []
-		print('hello')
 		for i in range(0, len(times)):
 			#Returns it as a list of lists
 			milisecond_list += self.__convertTimesMiliseconds(times[i], dates[i])
@@ -73,11 +72,7 @@ class IntraDayToolkit:
 			if candle["datetime"] == start_date:
 				close_list.append(candle["close"])
 				h += 1
-
-		# for daydata in days:
-
-	def priceDifferenceBetweenTimes(candle1, candle2):
-		pass
+		return close_list
 	
 
 
@@ -99,7 +94,9 @@ def afterMarketCallDifferenceStrategy(earnings_map, ticker_list):
 			end_date = start_date + timedelta(days=1, hours=20) # last day is not inclusive
 			dates = [start_date, end_date]
 			# Expected return [1.1,2.1,-1,2] in percentages
-			changes = tk.retrieveSelectedTimesDifferences(dates, after_market_strat_times, ticker, "30m")
+			close_list = tk.retrieveSelectedTimesDifferences(dates, after_market_strat_times, ticker, "30m")
+			if(close_list):
+				print(close_list)
 			# x_axis = ["intraday1", "aftermarket", "premarket", "intraday2"]
 			# lg = LineGraph(x_axis, "After market strategy")
 			# except Exception as e: # Last line sometimes throws an error as it's blank
