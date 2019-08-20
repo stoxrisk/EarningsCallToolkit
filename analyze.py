@@ -106,7 +106,10 @@ def afterMarketCallDifferenceStrategy(earnings_map, ticker_list):
 	tk = IntraDayToolkit(api_key)
 	# 7 to adjust for TD Ameritrade api, earliest data available
 	after_market_strat_times = ["9:30,16,19", "4,9:30,16"]
-	difference_instructions =  ["1:2", "2:3", "4:5", "5:4"]
+	# We can use a graph like this to look for a pattern of upward or downward slopes to buy in at the right times
+	difference_instructions =  ["0:1", "1:2", "3:4", "4:5"]
+	# We can use this graph for the simplest viewing experience, comparing vs. a given day
+	# difference_instructions_s =  ["1:2", "1:3", "4:5", "5:4"]
 	for ticker in ticker_list:
 		earnings_date_list = cp.earnings_map[ticker]
 		x_axis = ["9:30 AM", "9:30 AM - 4 PM", "4 PM - 7:00 PM", "4 AM - 9:30 AM", "9:30 AM - 4:00 PM"]
