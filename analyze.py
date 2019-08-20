@@ -18,9 +18,9 @@ class LineGraph:
 
 		self.x_len = len(x_axis)
 
-	def plot(self, symbol, data, color):
-		if len(data) == self.x_len:
-			plt.plot(y_axis, data, color='g')
+	def plot(self, symbol, diff_array, x_axis, color):
+		if len(diff_array) == self.x_len:
+			plt.plot(x_axis, diff_array, color='g')
 
 	def show(self):
 		plt.show()
@@ -84,9 +84,20 @@ class IntraDayToolkit:
 
 	# Instructions will be a list used to identify which indicies to compare
 	# [157.3247, 155.79, 163.02, 163.0, 160.7784, 165.25] , ["1:2", "2:3", "4:5", "5:4"]
-	def priceArrayToDifferenceArray(price_array, instructions):
+	def priceArrayToDifferenceArray(self, price_array, instructions):
+		diff_array = []
+		# Start off with 0 change for a more readable line chart
+		diff_array.append(0)
+		for instruction in instructions:
+			print('lll')
+			i_list = instruction.split(":")
+			close1 = price_array[int(i_list[0])]
+			close2 = price_array[int(i_list[1])] 
+			diff = ((close2 - close1)/close1)*100
+			print(diff)
+			diff_array.append(diff)
 
-	
+		return diff_array
 
 # Strategy 1: Analyzing After market earnings calls.
 # We look at intra market data that day, then the after hours, then the next day we look at premarket and intraday
@@ -95,9 +106,10 @@ def afterMarketCallDifferenceStrategy(earnings_map, ticker_list):
 	tk = IntraDayToolkit(api_key)
 	# 7 to adjust for TD Ameritrade api, earliest data available
 	after_market_strat_times = ["9:30,16,19", "4,9:30,16"]
+	difference_instructions =  ["1:2", "2:3", "4:5", "5:4"]
 	for ticker in ticker_list:
 		earnings_date_list = cp.earnings_map[ticker]
-		x_axis = ["intraday1", "aftermarket", "premarket", "intraday2"]
+		x_axis = ["9:30 AM", "9:30 AM - 4 PM", "4 PM - 7:00 PM", "4 AM - 9:30 AM", "9:30 AM - 4:00 PM"]
 		lg = LineGraph(x_axis, "After market strategy")
 		for earningsdate in earnings_date_list:
 			dateandtime = earningsdate.split(":")
@@ -118,8 +130,9 @@ def afterMarketCallDifferenceStrategy(earnings_map, ticker_list):
 			# Expected return [1.1,2.1,-1,2] in percentages
 			close_list = tk.retrieveSelectedTimesDifferences(dates, after_market_strat_times, ticker, "30m")
 			if(close_list):
+				diff_array = tk.priceArrayToDifferenceArray(close_list, difference_instructions)
 				print(close_list)
-				lg.plot(ticker, close_list, 'g')
+				lg.plot(ticker, diff_array, x_axis,'g')
 		lg.show()
 
 
