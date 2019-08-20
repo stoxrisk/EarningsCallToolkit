@@ -7,8 +7,19 @@ import matplotlib as mpl
 import requests
 import os
 import json
+from time import sleep
 
 api_key = os.getenv('td_api_key')
+
+import logging
+logging.basicConfig(filename='error_log.txt',level=logging.DEBUG)
+
+earnings_cache = {}
+
+# class csvRecorder:
+# 	def __init__(self, filename):
+
+	# Total listings 
 
 # Class for creating a linegraph with many different lines, each line representing change over time periods
 class LineGraph:
@@ -71,7 +82,12 @@ class IntraDayToolkit:
 		end_date = dates[len(dates)-1].timestamp() * 1000
 		data_return = self.td_api.getPrices(ticker, freq_type, freq_num, str(int(end_date)), str(int(start_date))).content
 		data_return = json.loads(data_return)
-		candles = data_return["candles"]
+		try:
+			candles = data_return["candles"]
+		except:
+			print("No data available")
+			sleep(3) # Wait 3 seconds, refreshing the connection
+			return False
 
 		# no need for two seperate lists if using miliseconds, it incorporates days
 		# So this method simply returns a list of milisconds
@@ -95,10 +111,11 @@ class IntraDayToolkit:
 
 		if req_data_length != len(close_list):
 			# Debug Messages
-			print(close_list)
-			print("Last looked for was %s" % milisecond_list[h])
-			print(candles)
-			raise Exception("Invalid Data length retrieved")
+			logging.warning("Was unable to retrieve data for %s"%ticker)
+			logging.debug(close_list)
+			logging.debug("Last looked for was %s" % milisecond_list[h])
+			logging.debug(candles)
+			return False
 
 		return close_list
 
@@ -118,53 +135,95 @@ class IntraDayToolkit:
 
 		return diff_array
 
-# Strategy 1: Analyzing After market earnings calls.
-# We look at intra market data that day, then the after hours, then the next day we look at premarket and intraday
-# and we find a correlation among the data
+	def write_earnings_cache(self, filename, earnings_cache):
+		f = open(filename, 'w')	
+		f.write(json.dumps(earnings_cache))
+		f.close()
+
+	def open_earnings_cache(self, filename):
+		f = open(filename, 'a')	
+		contents = f.read()
+		f.close()
+		return contents
+
+
 def afterMarketCallDifferenceStrategy(earnings_map, ticker_list):
-	tk = IntraDayToolkit(api_key)
-	# 7 to adjust for TD Ameritrade api, earliest data available
-	after_market_strat_times = ["9:30,16,18", "5,9:30,16"]
-	# We can use a graph like this to look for a pattern of upward or downward slopes to buy in at the right times
-	difference_instructions =  ["0:1", "1:2", "3:4", "4:5"]
-	# We can use this graph for the simplest viewing experience, comparing vs. a given day
-	# difference_instructions_s =  ["1:2", "1:3", "4:5", "5:4"]
-	x_axis = ["9:30 AM", "9:30 AM - 4 PM", "4 PM - 7:00 PM", "4 AM - 9:30 AM", "9:30 AM - 4:00 PM"]
-	lg = LineGraph(x_axis, "After market strategy")
-	for ticker in ticker_list:
-		print("Analyzing data for %s"%ticker)
-		earnings_date_list = cp.earnings_map[ticker]
-		lg.changeColor()
-		for earningsdate in earnings_date_list:
-			# print(earningsdate)
-			dateandtime = earningsdate.split(":")
+	pass
 
-			# We only want to pay attention to stocks with after market close
+
+
+class AM_strategy1():
+
+	def __init__(self):
+		self.strategy_earnings_cache = {}
+
+	# Strategy 1: Analyzing After market earnings calls.
+	# We look at intra market data that day, then the after hours, then the next day we look at premarket and intraday
+	# and we find a correlation among the dat
+	def gather_data(self, earnings_map, ticker_list):
+		self.tk = IntraDayToolkit(api_key)
+		# 7 to adjust for TD Ameritrade api, earliest data available
+		after_market_strat_times = ["9:30,16,18", "7,9:30,16"]
+		self.strategy_earnings_cache["after_market_strat_times"] = after_market_strat_times
+		# We can use a graph like this to look for a pattern of upward or downward slopes to buy in at the right times
+		difference_instructions =  ["0:1", "1:2", "3:4", "4:5"]
+		self.strategy_earnings_cache["difference_instructions"] = difference_instructions
+		x_axis = ["9:30 AM", "9:30 AM - 4 PM", "4 PM - 6:00 PM", "7 AM - 9:30 AM", "9:30 AM - 4:00 PM"]
+		lg = LineGraph(x_axis, "After market strategy")
+		for ticker in ticker_list:
+			self.strategy_earnings_cache[ticker] = {}
+			print("Analyzing data for %s"%ticker)
 			try:
-				if(dateandtime[1] != "amc"):
-					print("%s on %s did not announce after market on %s"%(ticker, dateandtime[0]))
-					break
+				earnings_date_list = cp.earnings_map[ticker]
 			except:
-				# We have reached the end of the list most likely
-				continue
+				print("Don't have the earnings data for %s"%ticker)
+			lg.changeColor()
+			for earningsdate in earnings_date_list:
+				# print(earningsdate)
+				dateandtime = earningsdate.split(":")
 
-			# Setup dates
-			eastern = pytz.timezone('US/Eastern')
-			start_date = datetime.strptime(dateandtime[0], '%Y%m%d').astimezone(eastern)
-			end_date = datetime.strptime(dateandtime[0], '%Y%m%d').astimezone(eastern)
-			end_date = start_date + timedelta(days=1, hours=20) # last day is not inclusive
-			dates = [start_date, end_date]
-			# Expected return [1.1,2.1,-1,2] in percentages
-			close_list = tk.retrieveSelectedTimes(dates, after_market_strat_times, ticker, "30m", 6)
-			if(close_list):
-				diff_array = tk.priceArrayToDifferenceArray(close_list, difference_instructions)
-				# print(close_list)
-				lg.plot(ticker, diff_array, x_axis,'g')
-		
-	lg.show()
+				# We only want to pay attention to stocks with after market close
+				try:
+					if(dateandtime[1] != "amc"):
+						logger.info("%s on %s did not announce after market on %s"%(ticker, dateandtime[0]))
+						break
+				except:
+					# We have reached the end of the list most likely
+					continue
 
+				# Setup dates
+				eastern = pytz.timezone('US/Eastern')
+				start_date = datetime.strptime(dateandtime[0], '%Y%m%d').astimezone(eastern)
+				end_date = datetime.strptime(dateandtime[0], '%Y%m%d').astimezone(eastern)
+				end_date = start_date + timedelta(days=1, hours=20) # last day is not inclusive
+				dates = [start_date, end_date]
+				# Expected return [1.1,2.1,-1,2] in percentages
+				close_list = self.tk.retrieveSelectedTimes(dates, after_market_strat_times, ticker, "30m", 6)
+				if(close_list):
+					diff_array = self.tk.priceArrayToDifferenceArray(close_list, difference_instructions)
+					# print(close_list)
+					lg.plot(ticker, diff_array, x_axis,'g')
+					self.strategy_earnings_cache[ticker]["diff_array"] = diff_array
+					self.strategy_earnings_cache[ticker]["close_list"] = close_list
+		self.tk.write_earnings_cache("am_strat_1_earnings_data.txt", self.strategy_earnings_cache)
+		lg.show()
 
+	def pull_cache_data():
+		self.tk.open_earnings_cache("am_strat_1_earnings_data.txt")
+		pass
+
+	# def graph_strategy(self, ticker_list):
+	# 	for ticker, value in a_dict.items():
+	# 		print(key, '->', value)
+	# 	for ticker in ticker_list:
 
 cp = CalendarParser("white_list.txt","C:\\\\Users\\Andrew\\Google Drive\\Dropbox\\stox\\EarningsCallToolkit\\dates")
 cp.loadCached(False)
-afterMarketCallDifferenceStrategy(cp.earnings_map, ["AMZN", "MSFT", "AAPL", "HP"])
+
+after_market_strat1 = AM_strategy1()
+
+with open("white_list.txt", 'r') as f:
+	sp500 = f.read()
+sp500_list = sp500.split(",")
+
+after_market_strat1.gather_data(cp.earnings_map, sp500_list)
