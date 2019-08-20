@@ -22,10 +22,7 @@ class LineGraph:
 
 	def changeColor(self):
 		old_color = int(self.color[1])
-		print(old_color)
-		print(str(old_color + 1))
 		self.color = "C" + str(old_color + 1)
-		print(self.color)
 		
 
 	def plot(self, symbol, diff_array, x_axis, color):
@@ -62,6 +59,9 @@ class IntraDayToolkit:
 		# Only processesing for the year 2019 right now, because the only data I can seem to get from TDAmeritrade is 2019+
 		if str(dates[0].year) != "2019":
 			return False
+		if dates[0].weekday() == "Friday":
+			# Not sure if earnings announcements on Friday would be useful yet, so ignoring for now
+			return False
 		# Temporary code, because the only bars I'm planning to use for now are the 30m
 		if candlestick == "30m":
 			freq_type = "minute"
@@ -94,6 +94,10 @@ class IntraDayToolkit:
 					break
 
 		if req_data_length != len(close_list):
+			# Debug Messages
+			print(close_list)
+			print("Last looked for was %s" % milisecond_list[h])
+			print(candles)
 			raise Exception("Invalid Data length retrieved")
 
 		return close_list
@@ -120,7 +124,7 @@ class IntraDayToolkit:
 def afterMarketCallDifferenceStrategy(earnings_map, ticker_list):
 	tk = IntraDayToolkit(api_key)
 	# 7 to adjust for TD Ameritrade api, earliest data available
-	after_market_strat_times = ["9:30,16,19", "5,9:30,16"]
+	after_market_strat_times = ["9:30,16,18", "5,9:30,16"]
 	# We can use a graph like this to look for a pattern of upward or downward slopes to buy in at the right times
 	difference_instructions =  ["0:1", "1:2", "3:4", "4:5"]
 	# We can use this graph for the simplest viewing experience, comparing vs. a given day
@@ -128,16 +132,18 @@ def afterMarketCallDifferenceStrategy(earnings_map, ticker_list):
 	x_axis = ["9:30 AM", "9:30 AM - 4 PM", "4 PM - 7:00 PM", "4 AM - 9:30 AM", "9:30 AM - 4:00 PM"]
 	lg = LineGraph(x_axis, "After market strategy")
 	for ticker in ticker_list:
-		print(ticker)
+		print("Analyzing data for %s"%ticker)
 		earnings_date_list = cp.earnings_map[ticker]
 		lg.changeColor()
 		for earningsdate in earnings_date_list:
 			# print(earningsdate)
 			dateandtime = earningsdate.split(":")
+
 			# We only want to pay attention to stocks with after market close
 			try:
 				if(dateandtime[1] != "amc"):
-					return
+					print("%s on %s did not announce after market on %s"%(ticker, dateandtime[0]))
+					break
 			except:
 				# We have reached the end of the list most likely
 				continue
@@ -161,5 +167,4 @@ def afterMarketCallDifferenceStrategy(earnings_map, ticker_list):
 
 cp = CalendarParser("white_list.txt","C:\\\\Users\\Andrew\\Google Drive\\Dropbox\\stox\\EarningsCallToolkit\\dates")
 cp.loadCached(False)
-print(cp.earnings_map['AAPL'])
-afterMarketCallDifferenceStrategy(cp.earnings_map, ["AMZN", "MSFT"])
+afterMarketCallDifferenceStrategy(cp.earnings_map, ["AMZN", "MSFT", "AAPL", "HP"])
