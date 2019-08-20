@@ -7,7 +7,9 @@ Current Stage: [In-Development]
 ## Installation:
 
 export td_api_key={Your TD Ameritrade API key}
+
 pip install -r requirements.txt
+
 python analyze.py
 
 ## Contributing
