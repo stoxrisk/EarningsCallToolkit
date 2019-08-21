@@ -33,19 +33,30 @@ class csvRecorder:
 			diff_indicies = stat_zone.split("->")
 			reserved_words = ["after_market_strat_times", "difference_instructions"]
 			for ticker in earnings_map:
-				print(ticker)
+				# print(ticker)
 				if ticker not in reserved_words:
+					# try:
+					# This is the index of the percentage being compared against
+					main_compare_diff_index = diff_indicies[0] 
+					# These are the percentage(s) used for comaprison
 					try:
-						main_compare_diff_index = diff_indicies[0] 
 						ticker_diff_array = earnings_map[ticker]["diff_array"]
-						csv_map_change_percent_index = self.__bucketer(ticker_diff_array[main_compare_diff_index])
-						if csv_map_change_percent_index not in csv_map:
-							csv_map[csv_map_change_percent_index] = {}
-							csv_map[csv_map_change_percent_index]["diffs"] = []
-						for comparison_indicies in diff_indicies[1]:
-							csv_map[csv_map_change_percent_index]["diffs"].append(ticker_diff_array[comparison_indicies])
 					except:
-						logging.info("No data available for %s, not plotting" % ticker)
+						logging.info("There is no data for ticker %s" % ticker)
+					# print(ticker_diff_array)
+					# Getting the change precentage used for a base comaprison and having it turned into an index
+					csv_map_change_percent_index = self.__bucketer(ticker_diff_array[int(main_compare_diff_index)])
+					# print(csv_map[ind])
+					if csv_map_change_percent_index not in csv_map[ind]:
+						csv_map[ind][csv_map_change_percent_index] = {}
+						csv_map[ind][csv_map_change_percent_index]["diffs"] = []
+					for comparison_indicies in diff_indicies[1]:
+						csv_map[ind][csv_map_change_percent_index]["diffs"].append(ticker_diff_array[int(comparison_indicies)])
+					# except Exception as e:
+					# 	print(e)
+					# 	logging.info("No data available for %s, not plotting" % ticker)
+			
+			print(csv_map)
 
 			# Time to analyze the results gathered
 			for perc_change_bucket in csv_map[ind]:
@@ -57,16 +68,17 @@ class csvRecorder:
 				for diff in diffs:
 					total += diff
 					if positive:
-						count += 1 if diff > 0 else 0
+						same_direction_count += 1 if diff > 0 else 0
 					# negative
 					else:
-						count += 1 if diff < 0 else 0
+						same_direction_count += 1 if diff < 0 else 0
 				csv_map[ind][perc_change_bucket]["avg"] = total/total_count
 				csv_map[ind][perc_change_bucket]["continuation_probibility"] = same_direction_count/total_count
 
-		print csv_map
+			print(csv_map)
 
 	def __bucketer(self, num):
+		return str(int(num))
 
 
 # Class for creating a linegraph with many different lines, each line representing change over time periods
@@ -234,7 +246,7 @@ class AM_strategy1():
 	def __init__(self):
 		self.strategy_earnings_cache = {}
 		self.x_axis = ["9:30 AM", "9:30 AM - 4 PM", "4 PM - 6:00 PM", "7 AM - 9:30 AM", "9:30 AM - 4:00 PM"]
-		self.csv_strat = ["0->1","1->2;3"]
+		self.csv_strat = ["1->2","2->3","2->4"]
 		self.tk = IntraDayToolkit(api_key)
 
 
@@ -310,6 +322,6 @@ sp500_list = sp500.split(",")
 
 # after_market_strat1.gather_data(cp.earnings_map, sp500_list)
 earnings_map = after_market_strat1.pull_cache_data()
-lg = after_market_strat1.generate_line_graph(['AAPL'], data_range=[-5,5])
-lg.show()
+# lg = after_market_strat1.generate_line_graph(data_range=[-5,5])
+# lg.show()
 csv = after_market_strat1.generate_csv_file()
