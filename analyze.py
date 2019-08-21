@@ -14,8 +14,6 @@ api_key = os.getenv('td_api_key')
 import logging
 logging.basicConfig(filename='error_log.txt',level=logging.DEBUG)
 
-earnings_cache = {}
-
 # class csvRecorder:
 # 	def __init__(self, filename):
 
@@ -36,9 +34,9 @@ class LineGraph:
 		self.color = "C" + str(old_color + 1)
 		
 
-	def plot(self, symbol, diff_array, x_axis, color):
+	def plot(self, symbol, diff_array):
 		if len(diff_array) == self.x_len:
-			plt.plot(x_axis, diff_array, color=self.color, label=symbol)
+			plt.plot(self.x_axis, diff_array, color=self.color, label=symbol)
 
 	def show(self):
 		plt.legend()
@@ -141,35 +139,52 @@ class IntraDayToolkit:
 		f.close()
 
 	def open_earnings_cache(self, filename):
-		f = open(filename, 'a')	
+		f = open(filename, 'r')	
 		contents = f.read()
 		f.close()
-		return contents
+		return json.loads(contents)
 
+	def diff_earnings_map_to_lg(self, earnings_map, x_axis, data_range=[-8,8]):
+		lg = LineGraph(x_axis, "After market strategy 1")
+		reserved_words = ["after_market_strat_times", "difference_instructions"]
+		for i, ticker in enumerate(earnings_map):
+			print(ticker)
+			if ticker not in reserved_words:
+				try:
+					outlier = False
+					curr_diff_array = earnings_map[ticker]["diff_array"]
+					for diff in curr_diff_array:
+						if int(diff) > data_range[1] or int(diff) < data_range[0]:
+							outlier = True
+							break
+					if not outlier:
+						lg.plot(ticker, curr_diff_array)	
+						lg.changeColor()
+				except:
+					logging.info("No data available for %s, not plotting" % ticker)
+		return lg
 
-def afterMarketCallDifferenceStrategy(earnings_map, ticker_list):
-	pass
-
-
+	def remove_outlier_data(self):
+		pass
 
 class AM_strategy1():
 
 	def __init__(self):
 		self.strategy_earnings_cache = {}
+		self.x_axis = ["9:30 AM", "9:30 AM - 4 PM", "4 PM - 6:00 PM", "7 AM - 9:30 AM", "9:30 AM - 4:00 PM"]
+		self.tk = IntraDayToolkit(api_key)
 
 	# Strategy 1: Analyzing After market earnings calls.
 	# We look at intra market data that day, then the after hours, then the next day we look at premarket and intraday
 	# and we find a correlation among the dat
 	def gather_data(self, earnings_map, ticker_list):
-		self.tk = IntraDayToolkit(api_key)
 		# 7 to adjust for TD Ameritrade api, earliest data available
 		after_market_strat_times = ["9:30,16,18", "7,9:30,16"]
 		self.strategy_earnings_cache["after_market_strat_times"] = after_market_strat_times
 		# We can use a graph like this to look for a pattern of upward or downward slopes to buy in at the right times
 		difference_instructions =  ["0:1", "1:2", "3:4", "4:5"]
 		self.strategy_earnings_cache["difference_instructions"] = difference_instructions
-		x_axis = ["9:30 AM", "9:30 AM - 4 PM", "4 PM - 6:00 PM", "7 AM - 9:30 AM", "9:30 AM - 4:00 PM"]
-		lg = LineGraph(x_axis, "After market strategy")
+		
 		for ticker in ticker_list:
 			self.strategy_earnings_cache[ticker] = {}
 			print("Analyzing data for %s"%ticker)
@@ -177,7 +192,6 @@ class AM_strategy1():
 				earnings_date_list = cp.earnings_map[ticker]
 			except:
 				print("Don't have the earnings data for %s"%ticker)
-			lg.changeColor()
 			for earningsdate in earnings_date_list:
 				# print(earningsdate)
 				dateandtime = earningsdate.split(":")
@@ -202,20 +216,17 @@ class AM_strategy1():
 				if(close_list):
 					diff_array = self.tk.priceArrayToDifferenceArray(close_list, difference_instructions)
 					# print(close_list)
-					lg.plot(ticker, diff_array, x_axis,'g')
 					self.strategy_earnings_cache[ticker]["diff_array"] = diff_array
 					self.strategy_earnings_cache[ticker]["close_list"] = close_list
 		self.tk.write_earnings_cache("am_strat_1_earnings_data.txt", self.strategy_earnings_cache)
 		lg.show()
 
-	def pull_cache_data():
-		self.tk.open_earnings_cache("am_strat_1_earnings_data.txt")
-		pass
+	def pull_cache_data(self):
+		return self.tk.open_earnings_cache("am_strat_1_earnings_data.txt")
 
-	# def graph_strategy(self, ticker_list):
-	# 	for ticker, value in a_dict.items():
-	# 		print(key, '->', value)
-	# 	for ticker in ticker_list:
+	def generate_line_graph(self, earnings_map, data_range=[8,8]):
+		return self.tk.diff_earnings_map_to_lg(earnings_map, self.x_axis, data_range)
+
 
 cp = CalendarParser("white_list.txt","C:\\\\Users\\Andrew\\Google Drive\\Dropbox\\stox\\EarningsCallToolkit\\dates")
 cp.loadCached(False)
@@ -226,4 +237,7 @@ with open("white_list.txt", 'r') as f:
 	sp500 = f.read()
 sp500_list = sp500.split(",")
 
-after_market_strat1.gather_data(cp.earnings_map, sp500_list)
+# after_market_strat1.gather_data(cp.earnings_map, sp500_list)
+earnings_map = after_market_strat1.pull_cache_data()
+lg = after_market_strat1.generate_line_graph(earnings_map, data_range=[-5,5])
+lg.show()
