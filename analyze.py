@@ -19,12 +19,13 @@ class csvRecorder:
 		self.difference_strategy = difference_strategy
 		self.filename = filename
 
+	# Example Data format:
 	#"t1":
 	#{
 	#	> 1: {"continuation_probibility": 56, "avg": 3%, "diffs": []}
 	#}
 	# ["0->1","1->2;3"]
-	def generateCSV(self, earnings_map):
+	def generateCSV(self, earnings_map, titles):
 		csv_str = ""
 		csv_map = {}
 		for i, stat_zone in enumerate(self.difference_strategy):
@@ -56,8 +57,6 @@ class csvRecorder:
 					# 	print(e)
 					# 	logging.info("No data available for %s, not plotting" % ticker)
 			
-			print(csv_map)
-
 			# Time to analyze the results gathered
 			for perc_change_bucket in csv_map[ind]:
 				diffs = csv_map[ind][perc_change_bucket]["diffs"]
@@ -75,7 +74,24 @@ class csvRecorder:
 				csv_map[ind][perc_change_bucket]["avg"] = total/total_count
 				csv_map[ind][perc_change_bucket]["continuation_probibility"] = same_direction_count/total_count
 
-			print(csv_map)
+		print(csv_map)
+		if len(titles) != len(self.difference_strategy):
+			raise Exception("Invalid Length of Titles Array")
+		legend = "Percentage Bucket,Chance of Rising or Declining Further,Average Rise\n"
+		csv_str += legend
+		for i, title in enumerate(titles):
+			csv_str += title + "\n"
+			ind = str(i)
+			for percent in csv_map[ind]:
+				csv_str += "%s,%s,%s\n" % (percent, csv_map[ind][percent]["continuation_probibility"], csv_map[ind][percent]["avg"])
+
+		csv_file = open(self.filename, "w") 
+		csv_file.write(csv_str)
+		csv_file.close()
+
+
+		# Now to form the actual CSV
+
 
 	def __bucketer(self, num):
 		return str(int(num))
@@ -237,9 +253,9 @@ class IntraDayToolkit:
 		pass
 
 
-	def generate_csv_file(self, csv_strat, earnings_map, filename):
+	def generate_csv_file(self, csv_strat, earnings_map, filename, titles):
 		csv = csvRecorder(filename, csv_strat)
-		csv.generateCSV(earnings_map)
+		csv.generateCSV(earnings_map, titles)
 
 class AM_strategy1():
 
@@ -308,7 +324,10 @@ class AM_strategy1():
 
 
 	def generate_csv_file(self):
-		self.tk.generate_csv_file(self.csv_strat, self.earnings_map, "am_strat_1_earnings_data.csv")
+		titles = ["Comparing Intra Day to After Market", 
+				  "Comparing After Market to Pre Market Next Day",
+				  "Comparing After Market to IntraDay Next Day"]
+		self.tk.generate_csv_file(self.csv_strat, self.earnings_map, "am_strat_1_earnings_data.csv", titles)
 
 
 cp = CalendarParser("white_list.txt","C:\\\\Users\\Andrew\\Google Drive\\Dropbox\\stox\\EarningsCallToolkit\\dates")
