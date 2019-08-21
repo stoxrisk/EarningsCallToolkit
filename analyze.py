@@ -14,10 +14,15 @@ api_key = os.getenv('td_api_key')
 import logging
 logging.basicConfig(filename='error_log.txt',level=logging.DEBUG)
 
-# class csvRecorder:
-# 	def __init__(self, filename):
+class csvRecorder:
+	def __init__(self, filename, strategy):
+		self.strategy = strategy
+		self.filename = filename
 
-	# Total listings 
+	def generateCSV(earnings_map):
+		pass
+
+
 
 # Class for creating a linegraph with many different lines, each line representing change over time periods
 class LineGraph:
@@ -48,6 +53,7 @@ class IntraDayToolkit:
 	def __init__(self, api_key):
 		self.td_api = TDAmeritradeAPI(api_key)
 
+
 	def __convertTimesMiliseconds(self, time, date_for_time):
 		times_list = [] 
 		# reset for the 20 hour end day
@@ -62,6 +68,7 @@ class IntraDayToolkit:
 
 		return times_list
 		
+
 	# Takes in datetimes, times as strings, ticker, candlestick type
 	# Returns: Candles for the beginning and ends of the times
 	def retrieveSelectedTimes(self, dates, times, ticker, candlestick, req_data_length):
@@ -117,6 +124,7 @@ class IntraDayToolkit:
 
 		return close_list
 
+
 	# Instructions will be a list used to identify which indicies to compare
 	# [157.3247, 155.79, 163.02, 163.0, 160.7784, 165.25] , ["1:2", "2:3", "4:5", "5:4"]
 	def priceArrayToDifferenceArray(self, price_array, instructions):
@@ -133,16 +141,19 @@ class IntraDayToolkit:
 
 		return diff_array
 
+
 	def write_earnings_cache(self, filename, earnings_cache):
 		f = open(filename, 'w')	
 		f.write(json.dumps(earnings_cache))
 		f.close()
+
 
 	def open_earnings_cache(self, filename):
 		f = open(filename, 'r')	
 		contents = f.read()
 		f.close()
 		return json.loads(contents)
+
 
 	def diff_earnings_map_to_lg(self, earnings_map, x_axis, data_range=[-8,8]):
 		lg = LineGraph(x_axis, "After market strategy 1")
@@ -164,15 +175,23 @@ class IntraDayToolkit:
 					logging.info("No data available for %s, not plotting" % ticker)
 		return lg
 
+
 	def remove_outlier_data(self):
 		pass
+
+
+	def generate_csv_file(self, csv_strat, earnings_map, filename):
+		csv = csvRecorder(filename, csv_strat)
+		csv.generateCSV(earnings_map)
 
 class AM_strategy1():
 
 	def __init__(self):
 		self.strategy_earnings_cache = {}
 		self.x_axis = ["9:30 AM", "9:30 AM - 4 PM", "4 PM - 6:00 PM", "7 AM - 9:30 AM", "9:30 AM - 4:00 PM"]
+		self.csv_strat = ["0:1->1:2,1:2->2:3;3:4;4:5"]
 		self.tk = IntraDayToolkit(api_key)
+
 
 	# Strategy 1: Analyzing After market earnings calls.
 	# We look at intra market data that day, then the after hours, then the next day we look at premarket and intraday
@@ -221,11 +240,18 @@ class AM_strategy1():
 		self.tk.write_earnings_cache("am_strat_1_earnings_data.txt", self.strategy_earnings_cache)
 		lg.show()
 
-	def pull_cache_data(self):
-		return self.tk.open_earnings_cache("am_strat_1_earnings_data.txt")
 
-	def generate_line_graph(self, earnings_map, data_range=[8,8]):
-		return self.tk.diff_earnings_map_to_lg(earnings_map, self.x_axis, data_range)
+	def pull_cache_data(self):
+		self.earnings_map = self.tk.open_earnings_cache("am_strat_1_earnings_data.txt")
+		return self.earnings_map
+
+
+	def generate_line_graph(self, data_range=[8,8]):
+		return self.tk.diff_earnings_map_to_lg(self.earnings_map, self.x_axis, data_range)
+
+
+	def generate_csv_file(self):
+		self.tk.generate_csv_file(self.csv_strat, self.earnings_map, "am_strat_1_earnings_data.csv")
 
 
 cp = CalendarParser("white_list.txt","C:\\\\Users\\Andrew\\Google Drive\\Dropbox\\stox\\EarningsCallToolkit\\dates")
@@ -241,3 +267,4 @@ sp500_list = sp500.split(",")
 earnings_map = after_market_strat1.pull_cache_data()
 lg = after_market_strat1.generate_line_graph(earnings_map, data_range=[-5,5])
 lg.show()
+csv = after_market_strat1.generate_csv_file()
