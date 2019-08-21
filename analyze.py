@@ -34,9 +34,7 @@ class csvRecorder:
 			diff_indicies = stat_zone.split("->")
 			reserved_words = ["after_market_strat_times", "difference_instructions"]
 			for ticker in earnings_map:
-				# print(ticker)
 				if ticker not in reserved_words:
-					# try:
 					# This is the index of the percentage being compared against
 					main_compare_diff_index = diff_indicies[0] 
 					# These are the percentage(s) used for comaprison
@@ -44,18 +42,15 @@ class csvRecorder:
 						ticker_diff_array = earnings_map[ticker]["diff_array"]
 					except:
 						logging.info("There is no data for ticker %s" % ticker)
-					# print(ticker_diff_array)
+
 					# Getting the change precentage used for a base comaprison and having it turned into an index
 					csv_map_change_percent_index = self.__bucketer(ticker_diff_array[int(main_compare_diff_index)])
-					# print(csv_map[ind])
+
 					if csv_map_change_percent_index not in csv_map[ind]:
 						csv_map[ind][csv_map_change_percent_index] = {}
 						csv_map[ind][csv_map_change_percent_index]["diffs"] = []
 					for comparison_indicies in diff_indicies[1]:
 						csv_map[ind][csv_map_change_percent_index]["diffs"].append(ticker_diff_array[int(comparison_indicies)])
-					# except Exception as e:
-					# 	print(e)
-					# 	logging.info("No data available for %s, not plotting" % ticker)
 			
 			# Time to analyze the results gathered
 			for perc_change_bucket in csv_map[ind]:
@@ -73,24 +68,32 @@ class csvRecorder:
 						same_direction_count += 1 if diff < 0 else 0
 				csv_map[ind][perc_change_bucket]["avg"] = total/total_count
 				csv_map[ind][perc_change_bucket]["continuation_probibility"] = same_direction_count/total_count
+				csv_map[ind][perc_change_bucket]["diffs"] = []
 
-		print(csv_map)
+		# Sort the results
+		sorted_csv_info = []
+		for i in range(0,len(self.difference_strategy)):
+			sorted_dict = sorted(csv_map[str(i)].items(), key=lambda x: int(x[0]))
+			sorted_csv_info.append(sorted_dict)
+
+		# Check just to be sure
 		if len(titles) != len(self.difference_strategy):
 			raise Exception("Invalid Length of Titles Array")
+
+		# Top bar of the page
 		legend = "Percentage Bucket,Chance of Rising or Declining Further,Average Rise\n"
 		csv_str += legend
+		# Form the main bulk of the document from the tuple
 		for i, title in enumerate(titles):
 			csv_str += title + "\n"
 			ind = str(i)
-			for percent in csv_map[ind]:
-				csv_str += "%s,%s,%s\n" % (percent, csv_map[ind][percent]["continuation_probibility"], csv_map[ind][percent]["avg"])
+			for k, percent in enumerate(sorted_csv_info[i]):
+				csv_str += "%s,%s,%s\n" % (percent[0], sorted_csv_info[i][k][1]["continuation_probibility"], sorted_csv_info[i][k][1]["avg"])
 
+		# Write to the CSV
 		csv_file = open(self.filename, "w") 
 		csv_file.write(csv_str)
 		csv_file.close()
-
-
-		# Now to form the actual CSV
 
 
 	def __bucketer(self, num):
@@ -163,7 +166,7 @@ class IntraDayToolkit:
 		try:
 			candles = data_return["candles"]
 		except:
-			print("No data available")
+			logging.warning("No data available for %s this date" % ticker)
 			sleep(3) # Wait 3 seconds, refreshing the connection
 			return False
 
@@ -173,15 +176,10 @@ class IntraDayToolkit:
 		for i in range(0, len(times)):
 			milisecond_list += self.__convertTimesMiliseconds(times[i], dates[i])
 		# h keeps track of which item in miliscond list you are trying to find
-		# print(milisecond_list)
 		h = 0
 		close_list = []
-		# print(candles)
 		for candle in candles:
-			# print("Looking for: %s" % milisecond_list[h])
-			# print("Comparing %s and %s"%(candle["datetime"], milisecond_list[h]))
 			if int(candle["datetime"]) == milisecond_list[h]:
-				# print("found!")
 				close_list.append(candle["close"])
 				h += 1
 				if h == len(milisecond_list):
@@ -202,7 +200,6 @@ class IntraDayToolkit:
 	# [157.3247, 155.79, 163.02, 163.0, 160.7784, 165.25] , ["1:2", "2:3", "4:5", "5:4"]
 	def priceArrayToDifferenceArray(self, price_array, instructions):
 		diff_array = []
-		# print(price_array)
 		# Start off with 0 change for a more readable line chart
 		diff_array.append(0)
 		for instruction in instructions:
@@ -232,7 +229,6 @@ class IntraDayToolkit:
 		lg = LineGraph(x_axis, "After market strategy 1")
 		reserved_words = ["after_market_strat_times", "difference_instructions"]
 		for i, ticker in enumerate(earnings_map):
-			print(ticker)
 			if ticker not in reserved_words:
 				try:
 					outlier = False
@@ -341,6 +337,6 @@ sp500_list = sp500.split(",")
 
 # after_market_strat1.gather_data(cp.earnings_map, sp500_list)
 earnings_map = after_market_strat1.pull_cache_data()
-# lg = after_market_strat1.generate_line_graph(data_range=[-5,5])
-# lg.show()
+lg = after_market_strat1.generate_line_graph(data_range=[-5,5])
+lg.show()
 csv = after_market_strat1.generate_csv_file()
