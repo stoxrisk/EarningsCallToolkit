@@ -88,7 +88,7 @@ class csvRecorder:
 			csv_str += title + "\n"
 			ind = str(i)
 			for k, percent in enumerate(sorted_csv_info[i]):
-				csv_str += "%s,%s,%s\n" % (percent[0], sorted_csv_info[i][k][1]["continuation_probibility"], sorted_csv_info[i][k][1]["avg"])
+				csv_str += "%s%%,%s%%,%s%%\n" % (percent[0], str(float(sorted_csv_info[i][k][1]["continuation_probibility"])*100), sorted_csv_info[i][k][1]["avg"])
 
 		# Write to the CSV
 		csv_file = open(self.filename, "w") 
