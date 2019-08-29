@@ -160,8 +160,8 @@ class _IntraDayToolkit:
 
 	"""
 	Accepts: 
-		dates: 
-		times:
+		dates: list of dates to be gathered for
+		times: list of times to be gathered for
 		ticker: ticker such as 'AAPL'
 		candlestick: What kind of candlestick, such a '30m'
 		req_data_length: 
@@ -258,7 +258,8 @@ class _IntraDayToolkit:
 
 class Strategy():
 
-	def __init__(self, strategy_name, linegraph_x_axis, csv_strategy, market_strat_times, difference_instructions):
+	def __init__(self, strategy_name, linegraph_x_axis, csv_strategy, market_strat_times, difference_instructions, time):
+		self.am = True if time == "am" else False
 		self.strategy_name = strategy_name	
 		self.strategy_earnings_cache = {}
 		self.x_axis = linegraph_x_axis
@@ -267,9 +268,21 @@ class Strategy():
 		self.difference_instructions = difference_instructions
 		self.tk = _IntraDayToolkit(api_key)
 
+
+	"""
+	Retrieve the data from TD Ameritrade based on the inputs of this strategy
+	Accepts: earnings_map: map containing earnings calls dates
+	ticker_list: list of tickers to gather the data for
+	Returns: Nothing, but writes a json file to store the data
+	"""
 	def gather_data(self, earnings_map, ticker_list):
 		self.strategy_earnings_cache["after_market_strat_times"] = self.market_strat_times
 		self.strategy_earnings_cache["difference_instructions"] = self.difference_instructions
+
+		# Expected return size, Not handling for more than two days at the moment
+		expected_size = 0
+		for market_time in self.market_strat_times:
+			expected_size += len(market_time.split(","))
 		
 		for ticker in ticker_list:
 			self.strategy_earnings_cache[ticker] = {}
@@ -279,14 +292,17 @@ class Strategy():
 			except:
 				print("Don't have the earnings data for %s"%ticker)
 			for earningsdate in earnings_date_list:
-				# print(earningsdate)
-				dateandtime = earningsdate.split(":")
 
+				dateandtime = earningsdate.split(":")
 				# We only want to pay attention to stocks with after market close
 				try:
-					if(dateandtime[1] != "amc"):
+					if(dateandtime[1] != "amc" and self.am):
 						print("%s on %s did not announce after market on %s"%(ticker, dateandtime[0]))
 						break
+					if(dateandtime[1] == "amc" and not self.am):
+						print("%s on %s did not announce premarket market on %s"%(ticker, dateandtime[0]))
+						break
+
 				except:
 					# We have reached the end of the list most likely
 					continue
@@ -295,18 +311,29 @@ class Strategy():
 				eastern = pytz.timezone('US/Eastern')
 				start_date = datetime.strptime(dateandtime[0], '%Y%m%d').astimezone(eastern)
 				end_date = datetime.strptime(dateandtime[0], '%Y%m%d').astimezone(eastern)
-				end_date = start_date + timedelta(days=1, hours=20) # last day is not inclusive
-				dates = [start_date, end_date]
+
+				if self.am:
+					end_date = start_date + timedelta(days=1, hours=20) # last day is not inclusive
+				else: 
+					start_date = start_date - timedelta(hours=20)
+
+				dates = [start_date, end_date] 
+
 				# Expected return [1.1,2.1,-1,2] in percentages
-				close_list = self.tk.retrieveSelectedTimes(dates, self.market_strat_times, ticker, "30m", 6)
+				close_list = self.tk.retrieveSelectedTimes(dates, self.market_strat_times, ticker, "30m", expected_size)
+
+				# If we were able to retrieve the data add it to the map
 				if(close_list):
 					diff_array = self.tk.priceArrayToDifferenceArray(close_list, self.difference_instructions)
 					# print(close_list)
 					self.strategy_earnings_cache[ticker]["diff_array"] = diff_array
 					self.strategy_earnings_cache[ticker]["close_list"] = close_list
+
+		# Store the data for next time
 		self.write_earnings_cache(self.strategy_name + ".json", self.strategy_earnings_cache)
 
 
+	# Load up previously gathered data into a map
 	def pull_cache_data(self):
 		f = open(self.strategy_name + ".json", 'r')	
 		contents = f.read()
@@ -314,16 +341,20 @@ class Strategy():
 		self.earnings_map =  json.loads(contents)
 		return self.earnings_map
 
+
+	# Write the gathered data into a json format file for quick use again
 	def write_earnings_cache(self, filename, earnings_cache):
 		f = open(filename, 'w')	
 		f.write(json.dumps(earnings_cache))
 		f.close()
 
 
+	# Generate a line graph for this strategy
 	def generate_line_graph(self, data_range=[8,8]):
 		return self.tk.diff_earnings_map_to_lg(self.earnings_map, self.x_axis, data_range)
 
 
+	# Generate a CSV file for this strategy
 	def generate_csv_file(self, titles):
 		titles = ["Comparing Intra Day to After Market", 
 				  "Comparing After Market to Pre Market Next Day",
@@ -332,6 +363,12 @@ class Strategy():
 		csv.generateCSV(self.earnings_map, titles)
 
 
+
+"""
+After Market Strategy 1:
+Goal: Analyze the correlation in price change among the following timeframes surrounding an earnings date:
+Intra-Day vs. Post Market (earnings call), Post Market vs. Next day premarket, Post Market vs. Next Day intraday
+"""
 def AM_strategy1(pull_list=None):
 	strategy_name = "after_market_strat1"
 	titles = ["Comparing Intra Day to After Market", 
@@ -341,12 +378,12 @@ def AM_strategy1(pull_list=None):
 	csv_strat = ["1->2","2->3","2->4"]
 	difference_instructions =  ["0:1", "1:2", "3:4", "4:5"]
 	after_market_strat_times = ["9:30,16,18", "7,9:30,16"]
-	am_strat_1 = Strategy(strategy_name, x_axis, csv_strat, after_market_strat_times, difference_instructions)
+	am_strat_1 = Strategy(strategy_name, x_axis, csv_strat, after_market_strat_times, difference_instructions, "am")
 
 	if pull_list and not os.path.exists(strategy_name+".json"):
 		cp = CalendarParser("white_list.txt","C:\\\\Users\\Andrew\\Google Drive\\Dropbox\\stox\\EarningsCallToolkit\\dates")
 		cp.loadCached(False)
-		am_strat_1.gather_data(cp.earnings_map, sp500_list)
+		am_strat_1.gather_data(cp.earnings_map, pull_list)
 
 	earnings_return_data_map = am_strat_1.pull_cache_data()
 
