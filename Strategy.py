@@ -41,24 +41,24 @@ class _csvRecorder:
 			csv_map[ind] = {}
 			diff_indicies = stat_zone.split("->")
 			reserved_words = ["after_market_strat_times", "difference_instructions"]
-			for ticker in earnings_data_map:
-				if ticker not in reserved_words:
+			for symbol in earnings_data_map:
+				if symbol not in reserved_words:
 					# This is the index of the percentage being compared against
 					main_compare_diff_index = diff_indicies[0] 
 					# These are the percentage(s) used for comaprison
 					try:
-						ticker_diff_array = earnings_data_map[ticker]["diff_array"]
+						symbol_diff_array = earnings_data_map[symbol]["diff_array"]
 					except:
-						logging.info("There is no data for ticker %s" % ticker)
+						logging.info("There is no data for symbol %s" % symbol)
 
 					# Getting the change precentage used for a base comaprison and having it turned into an index
-					csv_map_change_percent_index = self.__intToIndexString(ticker_diff_array[int(main_compare_diff_index)])
+					csv_map_change_percent_index = self.__intToIndexString(symbol_diff_array[int(main_compare_diff_index)])
 
 					if csv_map_change_percent_index not in csv_map[ind]:
 						csv_map[ind][csv_map_change_percent_index] = {}
 						csv_map[ind][csv_map_change_percent_index]["diffs"] = []
 					for comparison_indicies in diff_indicies[1]:
-						csv_map[ind][csv_map_change_percent_index]["diffs"].append(ticker_diff_array[int(comparison_indicies)])
+						csv_map[ind][csv_map_change_percent_index]["diffs"].append(symbol_diff_array[int(comparison_indicies)])
 			
 			# Time to analyze the results gathered
 			for perc_change_bucket in csv_map[ind]:
@@ -89,7 +89,7 @@ class _csvRecorder:
 			raise Exception("Invalid Length of Titles Array")
 
 		# Top bar of the page
-		legend = "Percentage Bucket,Chance of Rising or Declining Further,Average Rise\n"
+		legend = "Percentage Bucket,Chance of Rising or Declining Further,Average Rise/Decline\n"
 		csv_str += legend
 		# Form the main bulk of the document from the tuple
 		for i, title in enumerate(titles):
@@ -120,7 +120,7 @@ class _LineGraph:
 		mpl.style.use('seaborn')
 
 
-	# Change the color for each new ticker
+	# Change the color for each new symbol
 	def changeColor(self):
 		old_color = int(self.color[1])
 		self.color = "C" + str(old_color + 1)
@@ -136,7 +136,7 @@ class _LineGraph:
 
 
 # The toolkit itself which features methods to help with analyzing time frames around earnings calls
-class _IntraDayToolkit:
+class IntraDayToolkit:
 
 	def __init__(self, api_key):
 		self.td_api = TDAmeritradeAPI(api_key)
@@ -162,12 +162,12 @@ class _IntraDayToolkit:
 	Accepts: 
 		dates: list of dates to be gathered for
 		times: list of times to be gathered for
-		ticker: ticker such as 'AAPL'
+		symbol: symbol such as 'AAPL'
 		candlestick: What kind of candlestick, such a '30m'
 		req_data_length: 
-	# Returns: A list of closing prices for a given ticker
+	# Returns: A list of closing prices for a given symbol
 	"""
-	def retrieveSelectedTimes(self, dates, times, ticker, candlestick, req_data_length):
+	def retrieveSelectedTimes(self, dates, times, symbol, candlestick, req_data_length):
 		# Only processesing for the year 2019 right now, because the only data I can seem to get from TDAmeritrade is 2019+
 		if str(dates[0].year) != "2019":
 			return False
@@ -181,12 +181,12 @@ class _IntraDayToolkit:
 		# Convert to miliseconds for api call
 		start_date = dates[0].timestamp() * 1000
 		end_date = dates[len(dates)-1].timestamp() * 1000
-		data_return = self.td_api.getPrices(ticker, freq_type, freq_num, str(int(end_date)), str(int(start_date))).content
+		data_return = self.td_api.getPrices(symbol, freq_type, freq_num, str(int(end_date)), str(int(start_date))).content
 		data_return = json.loads(data_return)
 		try:
 			candles = data_return["candles"]
 		except:
-			logging.warning("No data available for %s this date" % ticker)
+			logging.warning("No data available for %s this date" % symbol)
 			sleep(3) # Wait 3 seconds, refreshing the connection
 			return False
 
@@ -207,7 +207,7 @@ class _IntraDayToolkit:
 
 		if req_data_length != len(close_list):
 			# Debug Messages
-			logging.warning("Was unable to retrieve data for %s"%ticker)
+			logging.warning("Was unable to retrieve data for %s"%symbol)
 			logging.debug(close_list)
 			logging.debug("Last looked for was %s" % milisecond_list[h])
 			logging.debug(candles)
@@ -235,20 +235,20 @@ class _IntraDayToolkit:
 	def diff_earnings_map_to_lg(self, earnings_map, x_axis, data_range=[-8,8]):
 		lg = _LineGraph(x_axis, "After market strategy 1")
 		reserved_words = ["after_market_strat_times", "difference_instructions"]
-		for i, ticker in enumerate(earnings_map):
-			if ticker not in reserved_words:
+		for i, symbol in enumerate(earnings_map):
+			if symbol not in reserved_words:
 				try:
 					outlier = False
-					curr_diff_array = earnings_map[ticker]["diff_array"]
+					curr_diff_array = earnings_map[symbol]["diff_array"]
 					for diff in curr_diff_array:
 						if int(diff) > data_range[1] or int(diff) < data_range[0]:
 							outlier = True
 							break
 					if not outlier:
-						lg.plot(ticker, curr_diff_array)	
+						lg.plot(symbol, curr_diff_array)	
 						lg.changeColor()
 				except:
-					logging.info("No data available for %s, not plotting" % ticker)
+					logging.info("No data available for %s, not plotting" % symbol)
 		return lg
 
 
@@ -266,16 +266,16 @@ class Strategy():
 		self.csv_strat = csv_strategy
 		self.market_strat_times = market_strat_times
 		self.difference_instructions = difference_instructions
-		self.tk = _IntraDayToolkit(api_key)
+		self.tk = IntraDayToolkit(api_key)
 
 
 	"""
 	Retrieve the data from TD Ameritrade based on the inputs of this strategy
 	Accepts: earnings_map: map containing earnings calls dates
-	ticker_list: list of tickers to gather the data for
+	symbol_list: list of symbols to gather the data for
 	Returns: Nothing, but writes a json file to store the data
 	"""
-	def gather_data(self, earnings_map, ticker_list):
+	def gather_data(self, earnings_map, symbol_list):
 		self.strategy_earnings_cache["after_market_strat_times"] = self.market_strat_times
 		self.strategy_earnings_cache["difference_instructions"] = self.difference_instructions
 
@@ -284,23 +284,23 @@ class Strategy():
 		for market_time in self.market_strat_times:
 			expected_size += len(market_time.split(","))
 		
-		for ticker in ticker_list:
-			self.strategy_earnings_cache[ticker] = {}
-			print("Analyzing data for %s"%ticker)
+		for symbol in symbol_list:
+			self.strategy_earnings_cache[symbol] = {}
+			print("Analyzing data for %s"%symbol)
 			try:
-				earnings_date_list = earnings_map[ticker]
+				earnings_date_list = earnings_map[symbol]
 			except:
-				print("Don't have the earnings data for %s"%ticker)
+				print("Don't have the earnings data for %s"%symbol)
 			for earningsdate in earnings_date_list:
 
 				dateandtime = earningsdate.split(":")
 				# We only want to pay attention to stocks with after market close
 				try:
 					if(dateandtime[1] != "amc" and self.am):
-						print("%s on %s did not announce after market on %s"%(ticker, dateandtime[0]))
+						print("%s on %s did not announce after market on %s"%(symbol, dateandtime[0]))
 						break
 					if(dateandtime[1] == "amc" and not self.am):
-						print("%s on %s did not announce premarket market on %s"%(ticker, dateandtime[0]))
+						print("%s on %s did not announce premarket market on %s"%(symbol, dateandtime[0]))
 						break
 
 				except:
@@ -320,14 +320,14 @@ class Strategy():
 				dates = [start_date, end_date] 
 
 				# Expected return [1.1,2.1,-1,2] in percentages
-				close_list = self.tk.retrieveSelectedTimes(dates, self.market_strat_times, ticker, "30m", expected_size)
+				close_list = self.tk.retrieveSelectedTimes(dates, self.market_strat_times, symbol, "30m", expected_size)
 
 				# If we were able to retrieve the data add it to the map
 				if(close_list):
 					diff_array = self.tk.priceArrayToDifferenceArray(close_list, self.difference_instructions)
 					# print(close_list)
-					self.strategy_earnings_cache[ticker]["diff_array"] = diff_array
-					self.strategy_earnings_cache[ticker]["close_list"] = close_list
+					self.strategy_earnings_cache[symbol]["diff_array"] = diff_array
+					self.strategy_earnings_cache[symbol]["close_list"] = close_list
 
 		# Store the data for next time
 		self.write_earnings_cache(self.strategy_name + ".json", self.strategy_earnings_cache)
@@ -338,8 +338,8 @@ class Strategy():
 		f = open(self.strategy_name + ".json", 'r')	
 		contents = f.read()
 		f.close()
-		self.earnings_map =  json.loads(contents)
-		return self.earnings_map
+		self.strategy_earnings_cache =  json.loads(contents)
+		return self.strategy_earnings_cache
 
 
 	# Write the gathered data into a json format file for quick use again
@@ -351,7 +351,7 @@ class Strategy():
 
 	# Generate a line graph for this strategy
 	def generate_line_graph(self, data_range=[8,8]):
-		return self.tk.diff_earnings_map_to_lg(self.earnings_map, self.x_axis, data_range)
+		return self.tk.diff_earnings_map_to_lg(self.strategy_earnings_cache, self.x_axis, data_range)
 
 
 	# Generate a CSV file for this strategy
@@ -360,7 +360,16 @@ class Strategy():
 				  "Comparing After Market to Pre Market Next Day",
 				  "Comparing After Market to IntraDay Next Day"]
 		csv = _csvRecorder(self.strategy_name + ".csv", self.csv_strat)
-		csv.generateCSV(self.earnings_map, titles)
+		csv.generateCSV(self.strategy_earnings_cache, titles)
+
+
+	def redefine_diff_arrays(self, symbol_list, new_difference_instructions):
+		for symbol in symbol_list:
+			try:
+				new_diff_array = self.tk.priceArrayToDifferenceArray(self.strategy_earnings_cache[symbol]["close_list"], new_difference_instructions)
+				self.strategy_earnings_cache[symbol]["diff_array"] = new_diff_array
+			except:
+				logging.info("No data for redefining difference array for symbol %s")
 
 
 
@@ -376,7 +385,7 @@ def AM_strategy1(pull_list=None):
 			  "Comparing After Market to IntraDay Next Day"]
 	x_axis = ["9:30 AM", "9:30 AM - 4 PM", "4 PM - 6:00 PM", "7 AM - 9:30 AM", "9:30 AM - 4:00 PM"]
 	csv_strat = ["1->2","2->3","2->4"]
-	difference_instructions =  ["0:1", "1:2", "3:4", "4:5"]
+	difference_instructions =  ["0:1", "0:2", "0:4", "0:5"]
 	after_market_strat_times = ["9:30,16,18", "7,9:30,16"]
 	am_strat_1 = Strategy(strategy_name, x_axis, csv_strat, after_market_strat_times, difference_instructions, "am")
 
@@ -387,7 +396,13 @@ def AM_strategy1(pull_list=None):
 
 	earnings_return_data_map = am_strat_1.pull_cache_data()
 
-	lg = am_strat_1.generate_line_graph(data_range=[-5,5])
+	lg = am_strat_1.generate_line_graph(data_range=[-17,17])
 	lg.show()
 
-	csv = am_strat_1.generate_csv_file(titles)
+	# Now to perform this again we need a different set of difference instructions, we can use the toolkit for this
+	# Before we essentially had a relative line of change since the beginning of the earnings call day
+	# Now we are doing active comparisons between the time frame rise/fall percentages
+	new_difference_instructions = ["0:1", "1:2", "3:4", "4:5"]
+	if pull_list:
+		am_strat_1.redefine_diff_arrays(pull_list, new_difference_instructions)
+		csv = am_strat_1.generate_csv_file(titles)
