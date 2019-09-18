@@ -217,10 +217,16 @@ class IntraDayToolkit:
 		return close_list
 
 
-	def retrieve_day_bars_yahoo(self, dates, symbol, req_data_length):
+	def retrieve_day_bars_yahoo(self, dates, symbol, req_data_length, return_format=["close","close"]):
+		print(symbol)
 		symbol_yahoo_finance_interactor = YahooFinancials(symbol)
-		prices = symbol_yahoo_finance_interactor.get_historical_price_data(dates[0].strftime('%Y-%m-%d'), dates[1].strftime('%Y-%m-%d'), 'daily')
-		print(prices)
+		print(dates[0].strftime('%Y-%m-%d'))
+		print(dates[1].strftime('%Y-%m-%d'))
+		earnings_days_data = symbol_yahoo_finance_interactor.get_historical_price_data(dates[0].strftime('%Y-%m-%d'), dates[1].strftime('%Y-%m-%d'), 'daily')
+		print(earnings_days_data)
+		# price1 = earnings_days_data[symbol][prices]
+		# price2 = 
+		# return []
 
 	# Instructions will be a list used to identify which indicies to compare
 	# [157.3247, 155.79, 163.02, 163.0, 160.7784, 165.25] , ["1:2", "2:3", "4:5", "5:4"]
@@ -302,6 +308,10 @@ class Strategy():
 
 				dateandtime = earningsdate.split(":")
 				if not yahoo_daily:
+					
+					if dateandtime[0] == '':
+						continue
+
 					# We only want to pay attention to stocks with after market close
 					# No other conditions exist for this right now
 					try:
@@ -341,12 +351,15 @@ class Strategy():
 					eastern = pytz.timezone('US/Eastern')
 					# In case of a needed format change:
 					# yahoo_formatted_date = "%s-%s-%s"%(dateandtime[0][:4], dateandtime[0][4:6], dateandtime[0][6:8])
+					if dateandtime[0] == '':
+						continue
 					start_date = datetime.strptime(dateandtime[0], '%Y%m%d').astimezone(eastern)
 					end_date = datetime.strptime(dateandtime[0], '%Y%m%d').astimezone(eastern)
 					if dateandtime[1] == "amc":
-						end_date = start_date + timedelta(days=1)
+						end_date = start_date + timedelta(days=2)
 					elif dateandtime[1] == "bmo":
 						start_date = start_date - timedelta(days=1)
+						end_date = start_date + timedelta(days=1)
 					dates = [start_date, end_date] 
 
 					close_list = self.tk.retrieve_day_bars_yahoo(dates, symbol, expected_size)
@@ -376,6 +389,10 @@ class Strategy():
 		f = open(filename, 'w')	
 		f.write(json.dumps(earnings_cache))
 		f.close()
+
+
+	def write_earnings_cache_by_symbol(self, yahoo_data=True):
+		pass
 
 
 	# Generate a line graph for this strategy
