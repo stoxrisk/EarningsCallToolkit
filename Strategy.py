@@ -218,7 +218,9 @@ class IntraDayToolkit:
 
 
 	def retrieve_day_bars_yahoo(self, dates, symbol, req_data_length):
-		yahoo_financials_commodities.get_historical_price_data()
+		symbol_yahoo_finance_interactor = YahooFinancials(symbol)
+		prices = symbol_yahoo_finance_interactor.get_historical_price_data(dates[0].strftime('%Y-%m-%d'), dates[1].strftime('%Y-%m-%d'), 'daily')
+		print(prices)
 
 	# Instructions will be a list used to identify which indicies to compare
 	# [157.3247, 155.79, 163.02, 163.0, 160.7784, 165.25] , ["1:2", "2:3", "4:5", "5:4"]
@@ -268,7 +270,7 @@ class Strategy():
 		self.strategy_earnings_cache = {}
 		self.x_axis = linegraph_x_axis
 		self.csv_strat = csv_strategy
-		self.market_strat_times = market_strat_times
+		self.after_market_strat_times = market_strat_times
 		self.difference_instructions = difference_instructions
 		self.tk = IntraDayToolkit(api_key)
 
@@ -279,14 +281,15 @@ class Strategy():
 	symbol_list: list of symbols to gather the data for
 	Returns: Nothing, but writes a json file to store the data
 	"""
-	def gather_data(self, earnings_map, symbol_list, yahoo=False):
-		self.strategy_earnings_cache["after_market_strat_times"] = self.market_strat_times
+	def gather_data(self, earnings_map, symbol_list, yahoo_daily=False):
+		self.strategy_earnings_cache["after_market_strat_times"] = self.after_market_strat_times
 		self.strategy_earnings_cache["difference_instructions"] = self.difference_instructions
 
 		# Expected return size, Not handling for more than two days at the moment
 		expected_size = 0
-		for market_time in self.market_strat_times:
-			expected_size += len(market_time.split(","))
+		if not yahoo_daily:
+			for market_time in self.after_market_strat_times:
+				expected_size += len(market_time.split(","))
 		
 		for symbol in symbol_list:
 			self.strategy_earnings_cache[symbol] = {}
@@ -298,33 +301,55 @@ class Strategy():
 			for earningsdate in earnings_date_list:
 
 				dateandtime = earningsdate.split(":")
-				# We only want to pay attention to stocks with after market close
-				try:
-					if(dateandtime[1] != "amc" and self.am):
-						print("%s on %s did not announce after market on %s"%(symbol, dateandtime[0]))
-						break
-					if(dateandtime[1] == "amc" and not self.am):
-						print("%s on %s did not announce premarket market on %s"%(symbol, dateandtime[0]))
-						break
+				if not yahoo_daily:
+					# We only want to pay attention to stocks with after market close
+					# No other conditions exist for this right now
+					try:
+						if(dateandtime[1] != "amc" and self.am):
+							print("%s on %s did not announce after market on %s"%(symbol, dateandtime[0]))
+							break
+						if(dateandtime[1] == "amc" and not self.am):
+							print("%s on %s did not announce premarket market on %s"%(symbol, dateandtime[0]))
+							break
 
-				except:
-					# We have reached the end of the list most likely
-					continue
+					except:
+						# We have reached the end of the list most likely
+						continue
 
-				# Setup dates
-				eastern = pytz.timezone('US/Eastern')
-				start_date = datetime.strptime(dateandtime[0], '%Y%m%d').astimezone(eastern)
-				end_date = datetime.strptime(dateandtime[0], '%Y%m%d').astimezone(eastern)
+					# Setup dates
+					eastern = pytz.timezone('US/Eastern')
+					start_date = datetime.strptime(dateandtime[0], '%Y%m%d').astimezone(eastern)
+					end_date = datetime.strptime(dateandtime[0], '%Y%m%d').astimezone(eastern)
 
-				if self.am:
-					end_date = start_date + timedelta(days=1, hours=20) # last day is not inclusive
-				else: 
-					start_date = start_date - timedelta(hours=20)
+					if self.am:
+						end_date = start_date + timedelta(days=1, hours=20) # last day is not inclusive
+					else: 
+						start_date = start_date - timedelta(hours=20)
 
-				dates = [start_date, end_date] 
+					dates = [start_date, end_date] 
 
-				# Expected return [1.1,2.1,-1,2] in percentages
-				close_list = self.tk.retrieveSelectedTimes(dates, self.market_strat_times, symbol, "30m", expected_size)
+					# Expected return [1.1,2.1,-1,2] in percentages
+					close_list = self.tk.retrieveSelectedTimes(dates, self.after_market_strat_times, symbol, "30m", expected_size)
+
+					# If we were able to retrieve the data add it to the map
+					if(close_list):
+						diff_array = self.tk.priceArrayToDifferenceArray(close_list, self.difference_instructions)
+						# print(close_list)
+						self.strategy_earnings_cache[symbol]["diff_array"] = diff_array
+						self.strategy_earnings_cache[symbol]["close_list"] = close_list
+				else:
+					eastern = pytz.timezone('US/Eastern')
+					# In case of a needed format change:
+					# yahoo_formatted_date = "%s-%s-%s"%(dateandtime[0][:4], dateandtime[0][4:6], dateandtime[0][6:8])
+					start_date = datetime.strptime(dateandtime[0], '%Y%m%d').astimezone(eastern)
+					end_date = datetime.strptime(dateandtime[0], '%Y%m%d').astimezone(eastern)
+					if dateandtime[1] == "amc":
+						end_date = start_date + timedelta(days=1)
+					elif dateandtime[1] == "bmo":
+						start_date = start_date - timedelta(days=1)
+					dates = [start_date, end_date] 
+
+					close_list = self.tk.retrieve_day_bars_yahoo(dates, symbol, expected_size)
 
 				# If we were able to retrieve the data add it to the map
 				if(close_list):
@@ -394,7 +419,7 @@ def AM_strategy1(pull_list=None):
 	am_strat_1 = Strategy(strategy_name, x_axis, csv_strat, after_market_strat_times, difference_instructions, "am")
 
 	if pull_list and not os.path.exists(strategy_name+".json"):
-		cp = CalendarParser("white_list.txt","C:\\\\Users\\Andrew\\Google DriveW\\Dropbox\\stox\\EarningsCallToolkit\\dates")
+		cp = CalendarParser("white_list.txt", os.getcwd() + "\\dates")
 		cp.loadCached(False)
 		am_strat_1.gather_data(cp.earnings_map, pull_list)
 
@@ -418,9 +443,11 @@ Goal: The purpose of this strategy is to analyze the average difference of price
 """
 def AM_PM_Change_Average(pull_list=None):
 	strategy_name = "AM_PM_Change_Average_strat"
-	AM_PM_Change_Average_strat = Strategy(strategy_name, None, )
+	difference_instructions =  ["0:1"]
+	# after_market_strat_times = ["9:30,16,18", "7,9:30,16"]
+	AM_PM_Change_Average_strat = Strategy(strategy_name, None, None, None, difference_instructions, "am")
 
-	if pull_list and not os.path.exists(strategy_name+".json"):
-		cp = CalendarParser("white_list.txt","C:\\\\Users\\Andrew\\Google DriveW\\Dropbox\\stox\\EarningsCallToolkit\\dates")
+	if pull_list and not os.path.exists(strategy_name + ".json"):
+		cp = CalendarParser("white_list.txt", os.getcwd() + "\\dates")
 		cp.loadCached(False)
-		am_strat_1.gather_data(cp.earnings_map, pull_list)
+		AM_PM_Change_Average_strat.gather_data(cp.earnings_map, pull_list, yahoo_daily=True)
