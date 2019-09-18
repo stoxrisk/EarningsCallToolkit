@@ -8,6 +8,7 @@ import requests
 import os
 import json
 from time import sleep
+from yahoofinancials import YahooFinancials
 
 # td_api_key needs to be defined as an environment variable
 api_key = os.getenv('td_api_key')
@@ -216,6 +217,9 @@ class IntraDayToolkit:
 		return close_list
 
 
+	def retrieve_day_bars_yahoo(self, dates, symbol, req_data_length):
+		yahoo_financials_commodities.get_historical_price_data()
+
 	# Instructions will be a list used to identify which indicies to compare
 	# [157.3247, 155.79, 163.02, 163.0, 160.7784, 165.25] , ["1:2", "2:3", "4:5", "5:4"]
 	def priceArrayToDifferenceArray(self, price_array, instructions):
@@ -275,7 +279,7 @@ class Strategy():
 	symbol_list: list of symbols to gather the data for
 	Returns: Nothing, but writes a json file to store the data
 	"""
-	def gather_data(self, earnings_map, symbol_list):
+	def gather_data(self, earnings_map, symbol_list, yahoo=False):
 		self.strategy_earnings_cache["after_market_strat_times"] = self.market_strat_times
 		self.strategy_earnings_cache["difference_instructions"] = self.difference_instructions
 
@@ -390,7 +394,7 @@ def AM_strategy1(pull_list=None):
 	am_strat_1 = Strategy(strategy_name, x_axis, csv_strat, after_market_strat_times, difference_instructions, "am")
 
 	if pull_list and not os.path.exists(strategy_name+".json"):
-		cp = CalendarParser("white_list.txt","C:\\\\Users\\Andrew\\Google Drive\\Dropbox\\stox\\EarningsCallToolkit\\dates")
+		cp = CalendarParser("white_list.txt","C:\\\\Users\\Andrew\\Google DriveW\\Dropbox\\stox\\EarningsCallToolkit\\dates")
 		cp.loadCached(False)
 		am_strat_1.gather_data(cp.earnings_map, pull_list)
 
@@ -406,3 +410,17 @@ def AM_strategy1(pull_list=None):
 	if pull_list:
 		am_strat_1.redefine_diff_arrays(pull_list, new_difference_instructions)
 		csv = am_strat_1.generate_csv_file(titles)
+
+
+"""
+Change Average:
+Goal: The purpose of this strategy is to analyze the average difference of price before and after earnings calls
+"""
+def AM_PM_Change_Average(pull_list=None):
+	strategy_name = "AM_PM_Change_Average_strat"
+	AM_PM_Change_Average_strat = Strategy(strategy_name, None, )
+
+	if pull_list and not os.path.exists(strategy_name+".json"):
+		cp = CalendarParser("white_list.txt","C:\\\\Users\\Andrew\\Google DriveW\\Dropbox\\stox\\EarningsCallToolkit\\dates")
+		cp.loadCached(False)
+		am_strat_1.gather_data(cp.earnings_map, pull_list)
