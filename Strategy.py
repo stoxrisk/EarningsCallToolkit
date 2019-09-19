@@ -224,9 +224,10 @@ class IntraDayToolkit:
 		print(dates[1].strftime('%Y-%m-%d'))
 		earnings_days_data = symbol_yahoo_finance_interactor.get_historical_price_data(dates[0].strftime('%Y-%m-%d'), dates[1].strftime('%Y-%m-%d'), 'daily')
 		print(earnings_days_data)
-		# price1 = earnings_days_data[symbol][prices]
-		# price2 = 
-		# return []
+		# earnings_days_data = json.loads(earnings_days_data)
+		price1 = earnings_days_data[symbol]["prices"][0][return_format[0]]
+		price2 = earnings_days_data[symbol]["prices"][1][return_format[1]]
+		return [price1, price2]
 
 	# Instructions will be a list used to identify which indicies to compare
 	# [157.3247, 155.79, 163.02, 163.0, 160.7784, 165.25] , ["1:2", "2:3", "4:5", "5:4"]
@@ -351,7 +352,7 @@ class Strategy():
 					eastern = pytz.timezone('US/Eastern')
 					# In case of a needed format change:
 					# yahoo_formatted_date = "%s-%s-%s"%(dateandtime[0][:4], dateandtime[0][4:6], dateandtime[0][6:8])
-					if dateandtime[0] == '':
+					if dateandtime[0] == '': # The end of the file contains this, ignore
 						continue
 					start_date = datetime.strptime(dateandtime[0], '%Y%m%d').astimezone(eastern)
 					end_date = datetime.strptime(dateandtime[0], '%Y%m%d').astimezone(eastern)
@@ -359,7 +360,7 @@ class Strategy():
 						end_date = start_date + timedelta(days=2)
 					elif dateandtime[1] == "bmo":
 						start_date = start_date - timedelta(days=1)
-						end_date = start_date + timedelta(days=1)
+						end_date = end_date + timedelta(days=1)
 					dates = [start_date, end_date] 
 
 					close_list = self.tk.retrieve_day_bars_yahoo(dates, symbol, expected_size)
