@@ -46,22 +46,23 @@ class _csvRecorder:
 			reserved_words = ["after_market_strat_times", "difference_instructions"]
 			for symbol in earnings_data_map:
 				if symbol not in reserved_words:
-					# This is the index of the percentage being compared against
-					main_compare_diff_index = diff_indicies[0] 
-					# These are the percentage(s) used for comaprison
-					try:
-						symbol_diff_array = earnings_data_map[symbol]["diff_array"]
-					except:
-						logging.info("There is no data for symbol %s" % symbol)
+					for earningsdate in earnings_data_map[symbol]:
+						# This is the index of the percentage being compared against
+						main_compare_diff_index = diff_indicies[0] 
+						# These are the percentage(s) used for comaprison
+						try:
+							symbol_diff_array = earnings_data_map[symbol]["diff_array"]
+						except:
+							logging.info("There is no data for symbol %s" % symbol)
 
-					# Getting the change precentage used for a base comaprison and having it turned into an index
-					csv_map_change_percent_index = self.__intToIndexString(symbol_diff_array[int(main_compare_diff_index)])
+						# Getting the change precentage used for a base comaprison and having it turned into an index
+						csv_map_change_percent_index = self.__intToIndexString(symbol_diff_array[int(main_compare_diff_index)])
 
-					if csv_map_change_percent_index not in csv_map[ind]:
-						csv_map[ind][csv_map_change_percent_index] = {}
-						csv_map[ind][csv_map_change_percent_index]["diffs"] = []
-					for comparison_indicies in diff_indicies[1]:
-						csv_map[ind][csv_map_change_percent_index]["diffs"].append(symbol_diff_array[int(comparison_indicies)])
+						if csv_map_change_percent_index not in csv_map[ind]:
+							csv_map[ind][csv_map_change_percent_index] = {}
+							csv_map[ind][csv_map_change_percent_index]["diffs"] = []
+						for comparison_indicies in diff_indicies[1]:
+							csv_map[ind][csv_map_change_percent_index]["diffs"].append(symbol_diff_array[int(comparison_indicies)])
 			
 			# Time to analyze the results gathered
 			for perc_change_bucket in csv_map[ind]:
@@ -256,18 +257,19 @@ class IntraDayToolkit:
 		reserved_words = ["after_market_strat_times", "difference_instructions"]
 		for i, symbol in enumerate(earnings_map):
 			if symbol not in reserved_words:
-				try:
-					outlier = False
-					curr_diff_array = earnings_map[symbol]["diff_array"]
-					for diff in curr_diff_array:
-						if int(diff) > data_range[1] or int(diff) < data_range[0]:
-							outlier = True
-							break
-					if not outlier:
-						lg.plot(symbol, curr_diff_array)	
-						lg.changeColor()
-				except:
-					logging.info("No data available for %s, not plotting" % symbol)
+				for earningsdate in earnings_map[symbol]:
+					try:
+						outlier = False
+						curr_diff_array = earnings_map[symbol][earningsdate]["diff_array"]
+						for diff in curr_diff_array:
+							if int(diff) > data_range[1] or int(diff) < data_range[0]:
+								outlier = True
+								break
+						if not outlier:
+							lg.plot(symbol, curr_diff_array)	
+							lg.changeColor()
+					except:
+						logging.info("No data available for %s, not plotting" % symbol)
 		return lg
 
 
@@ -315,8 +317,8 @@ class Strategy():
 				print("Don't have the earnings data for %s"%symbol)
 				continue
 			for earningsdate in earnings_date_list:
-
 				dateandtime = earningsdate.split(":")
+				self.strategy_earnings_cache[symbol][dateandtime[0]] = {}
 				if not yahoo_daily:
 					
 					if dateandtime[0] == '':
@@ -393,8 +395,8 @@ class Strategy():
 				if(close_list and close_list[0] > 0):
 					diff_array = self.tk.priceArrayToDifferenceArray(close_list, self.difference_instructions)
 					# print(close_list)
-					self.strategy_earnings_cache[symbol]["diff_array"] = diff_array
-					self.strategy_earnings_cache[symbol]["close_list"] = close_list
+					self.strategy_earnings_cache[symbol][dateandtime[0]]["diff_array"] = diff_array
+					self.strategy_earnings_cache[symbol][dateandtime[0]]["close_list"] = close_list
 				elif close_list is False:
 					continue 
 
