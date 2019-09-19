@@ -24,6 +24,10 @@ class _csvRecorder:
 		self.difference_strategy = difference_strategy
 		self.filename = filename
 
+
+	def generatSmallCSVs(self, dir, sp500="preferred", other="other"):
+		pass
+
 	"""
 	This method generates a csv based on the earnings map data generated from the Strategy Class. The CSV
 	contains information about percentage over time periods and buckets the data accordingly
@@ -385,8 +389,6 @@ class Strategy():
 						action_thread.kill()
 					close_list = arr[:]
 
-					print(close_list)
-
 					# if p.is_alive():
 					# 	p.terminate()
 						# p.join()
@@ -497,3 +499,5 @@ def AM_PM_Change_Average(pull_list=None):
 		cp = CalendarParser("white_list.txt", os.getcwd() + "\\dates")
 		cp.loadCached(False)
 		AM_PM_Change_Average_strat.gather_data(cp.earnings_map, pull_list, yahoo_daily=True)
+
+	earnings_return_data_map = AM_PM_Change_Average_strat.pull_cache_data()
