@@ -9,6 +9,8 @@ import os
 import json
 from time import sleep
 from yahoofinancials import YahooFinancials
+import multiprocessing
+import time
 
 # td_api_key needs to be defined as an environment variable
 api_key = os.getenv('td_api_key')
@@ -217,7 +219,7 @@ class IntraDayToolkit:
 		return close_list
 
 
-	def retrieve_day_bars_yahoo(self, dates, symbol, req_data_length, return_format=["close","close"]):
+	def retrieve_day_bars_yahoo(self, dates, symbol, req_data_length, arr, return_format=["close","close"]):
 		symbol_yahoo_finance_interactor = YahooFinancials(symbol)
 		print("Getting data for dates between: %s and %s" %(dates[0].strftime('%Y-%m-%d'), dates[1].strftime('%Y-%m-%d')))
 		earnings_days_data = symbol_yahoo_finance_interactor.get_historical_price_data(dates[0].strftime('%Y-%m-%d'), dates[1].strftime('%Y-%m-%d'), 'daily')
@@ -226,10 +228,12 @@ class IntraDayToolkit:
 			price1 = earnings_days_data[symbol]["prices"][0][return_format[0]]
 			price2 = earnings_days_data[symbol]["prices"][1][return_format[1]]
 			print("Success!")
-			return [price1, price2]
+			arr[0] = price1
+			arr[1] = price2
 		except:
 			# Right now I can only see this coming up because of holidays
 			print("Failure.")
+			return False
 
 	# Instructions will be a list used to identify which indicies to compare
 	# [157.3247, 155.79, 163.02, 163.0, 160.7784, 165.25] , ["1:2", "2:3", "4:5", "5:4"]
@@ -299,6 +303,8 @@ class Strategy():
 		if not yahoo_daily:
 			for market_time in self.after_market_strat_times:
 				expected_size += len(market_time.split(","))
+		else:
+			expected_size = 2
 		
 		for symbol in symbol_list:
 			self.strategy_earnings_cache[symbol] = {}
@@ -307,6 +313,7 @@ class Strategy():
 				earnings_date_list = earnings_map[symbol]
 			except:
 				print("Don't have the earnings data for %s"%symbol)
+				continue
 			for earningsdate in earnings_date_list:
 
 				dateandtime = earningsdate.split(":")
@@ -365,16 +372,31 @@ class Strategy():
 						end_date = end_date + timedelta(days=1)
 						if start_date.strftime('%A') == 'Sunday':
 							start_date = start_date - timedelta(days=2)
-					dates = [start_date, end_date] 
+					dates = [start_date, end_date]
+					arr = multiprocessing.Array('d', range(expected_size))
+					action_thread = multiprocessing.Process(target=self.tk.retrieve_day_bars_yahoo, args=(dates, symbol, expected_size,arr))
+					action_thread.start()
+					# close_list = self.tk.retrieve_day_bars_yahoo(dates, symbol, expected_size)
+					action_thread.join(timeout=2)
 
-					close_list = self.tk.retrieve_day_bars_yahoo(dates, symbol, expected_size)
+					if action_thread.is_alive():
+						action_thread.kill()
+					close_list = arr[:]
+
+					print(close_list)
+
+					# if p.is_alive():
+					# 	p.terminate()
+						# p.join()
 
 				# If we were able to retrieve the data add it to the map
-				if(close_list):
+				if(close_list and close_list[0] > 0):
 					diff_array = self.tk.priceArrayToDifferenceArray(close_list, self.difference_instructions)
 					# print(close_list)
 					self.strategy_earnings_cache[symbol]["diff_array"] = diff_array
 					self.strategy_earnings_cache[symbol]["close_list"] = close_list
+				elif close_list is False:
+					continue 
 
 		# Store the data for next time
 		self.write_earnings_cache(self.strategy_name + ".json", self.strategy_earnings_cache)
