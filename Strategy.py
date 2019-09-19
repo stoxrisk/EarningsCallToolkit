@@ -227,6 +227,8 @@ class IntraDayToolkit:
 		# earnings_days_data = json.loads(earnings_days_data)
 		price1 = earnings_days_data[symbol]["prices"][0][return_format[0]]
 		price2 = earnings_days_data[symbol]["prices"][1][return_format[1]]
+		print(price1)
+		print(price2)
 		return [price1, price2]
 
 	# Instructions will be a list used to identify which indicies to compare
@@ -291,7 +293,7 @@ class Strategy():
 	def gather_data(self, earnings_map, symbol_list, yahoo_daily=False):
 		self.strategy_earnings_cache["after_market_strat_times"] = self.after_market_strat_times
 		self.strategy_earnings_cache["difference_instructions"] = self.difference_instructions
-
+		eastern = pytz.timezone('US/Eastern')
 		# Expected return size, Not handling for more than two days at the moment
 		expected_size = 0
 		if not yahoo_daily:
@@ -328,7 +330,6 @@ class Strategy():
 						continue
 
 					# Setup dates
-					eastern = pytz.timezone('US/Eastern')
 					start_date = datetime.strptime(dateandtime[0], '%Y%m%d').astimezone(eastern)
 					end_date = datetime.strptime(dateandtime[0], '%Y%m%d').astimezone(eastern)
 
@@ -349,7 +350,6 @@ class Strategy():
 						self.strategy_earnings_cache[symbol]["diff_array"] = diff_array
 						self.strategy_earnings_cache[symbol]["close_list"] = close_list
 				else:
-					eastern = pytz.timezone('US/Eastern')
 					# In case of a needed format change:
 					# yahoo_formatted_date = "%s-%s-%s"%(dateandtime[0][:4], dateandtime[0][4:6], dateandtime[0][6:8])
 					if dateandtime[0] == '': # The end of the file contains this, ignore
@@ -357,10 +357,14 @@ class Strategy():
 					start_date = datetime.strptime(dateandtime[0], '%Y%m%d').astimezone(eastern)
 					end_date = datetime.strptime(dateandtime[0], '%Y%m%d').astimezone(eastern)
 					if dateandtime[1] == "amc":
-						end_date = start_date + timedelta(days=2)
+						end_date = end_date + timedelta(days=2)
+						if end_date.strftime('%A') == 'Saturday':
+							end_date = end_date + timedelta(days=3)
 					elif dateandtime[1] == "bmo":
 						start_date = start_date - timedelta(days=1)
 						end_date = end_date + timedelta(days=1)
+						if start_date.strftime('%A') == 'Sunday':
+							start_date = start_date - timedelta(days=2)
 					dates = [start_date, end_date] 
 
 					close_list = self.tk.retrieve_day_bars_yahoo(dates, symbol, expected_size)
