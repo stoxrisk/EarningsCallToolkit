@@ -218,18 +218,18 @@ class IntraDayToolkit:
 
 
 	def retrieve_day_bars_yahoo(self, dates, symbol, req_data_length, return_format=["close","close"]):
-		print(symbol)
 		symbol_yahoo_finance_interactor = YahooFinancials(symbol)
-		print(dates[0].strftime('%Y-%m-%d'))
-		print(dates[1].strftime('%Y-%m-%d'))
+		print("Getting data for dates between: %s and %s" %(dates[0].strftime('%Y-%m-%d'), dates[1].strftime('%Y-%m-%d')))
 		earnings_days_data = symbol_yahoo_finance_interactor.get_historical_price_data(dates[0].strftime('%Y-%m-%d'), dates[1].strftime('%Y-%m-%d'), 'daily')
-		print(earnings_days_data)
 		# earnings_days_data = json.loads(earnings_days_data)
-		price1 = earnings_days_data[symbol]["prices"][0][return_format[0]]
-		price2 = earnings_days_data[symbol]["prices"][1][return_format[1]]
-		print(price1)
-		print(price2)
-		return [price1, price2]
+		try:
+			price1 = earnings_days_data[symbol]["prices"][0][return_format[0]]
+			price2 = earnings_days_data[symbol]["prices"][1][return_format[1]]
+			print("Success!")
+			return [price1, price2]
+		except:
+			# Right now I can only see this coming up because of holidays
+			print("Failure.")
 
 	# Instructions will be a list used to identify which indicies to compare
 	# [157.3247, 155.79, 163.02, 163.0, 160.7784, 165.25] , ["1:2", "2:3", "4:5", "5:4"]
