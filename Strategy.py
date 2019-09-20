@@ -25,8 +25,44 @@ class _csvRecorder:
 		self.filename = filename
 
 
-	def generatSmallCSVs(self, dir, sp500="preferred", other="other"):
-		pass
+	def generatSmallCSVs(self, earnings_data_map, local_dir, preferred, sp500="preferred", other="other"):
+		sp500_data_path = local_dir + self.filename + "\\preferred"
+		for symbol in earnings_return_data_map:
+			final_path =  sp500_data_path + "\\%s" % symbol + ".csv"
+			csv_str = "Earnings Dates: ,"
+			earnings_before_temp = []
+			earnings_after_temp = []
+			difference_temp = []
+			for date in earnings_return_data_map[symbol]:
+				csv_str += date + ","
+				earnings_before = earnings_return_data_map[symbol][date][close_list][0]
+				earnings_before_temp.append(earnings_before)
+				earnings_after = earnings_return_data_map[symbol][date][close_list][1]
+				earnings_after_temp.append(earnings_after)
+				difference_percentage = ((earnings_after - earnings_before)/earnings_before)*100
+				difference_temp.append(str(difference_percentage) + "%%")
+			csv_str += "\nBefore Earnings:,"
+			for before in earnings_before_temp:
+				csv_str += before + ","
+			csv_str += "\nAfter Earnings:,"
+			for after in earnings_before_temp:
+				csv_str += after + ","
+			csv_str += "\nDifference:,"
+			total_dif = 0
+			for diff in earnings_before_temp:
+				total_dif += diff
+				csv_str += diff + ","
+			csv_str += "\nAverage Difference:,%f"%(total_dif/len(difference_temp))
+			csv_file = open(final_path, "w") 
+			csv_file.write(csv_str)
+			csv_file.close()
+
+		# Handle the sp500 data
+		
+
+		# Handle the non sp500 data 
+		if not preferred:
+			pass
 
 	"""
 	This method generates a csv based on the earnings map data generated from the Strategy Class. The CSV
@@ -433,11 +469,13 @@ class Strategy():
 
 	# Generate a CSV file for this strategy
 	def generate_csv_file(self, titles):
-		titles = ["Comparing Intra Day to After Market", 
-				  "Comparing After Market to Pre Market Next Day",
-				  "Comparing After Market to IntraDay Next Day"]
 		csv = _csvRecorder(self.strategy_name + ".csv", self.csv_strat)
 		csv.generateCSV(self.strategy_earnings_cache, titles)
+
+
+	def generate_daily_csv_library(self, earnings_data_map, folder_name, local_dir, preferred):
+		csv = _csvRecorder(folder_name, None)
+		csv.generatSmallCSVs(earnings_data_map, local_dir, preferred)
 
 
 	def redefine_diff_arrays(self, symbol_list, new_difference_instructions):
@@ -489,15 +527,17 @@ def AM_strategy1(pull_list=None):
 Change Average:
 Goal: The purpose of this strategy is to analyze the average difference of price before and after earnings calls
 """
-def AM_PM_Change_Average(pull_list=None):
+def AM_PM_Change_Average(pull_list=None, preferred=True):
 	strategy_name = "AM_PM_Change_Average_strat"
 	difference_instructions =  ["0:1"]
 	# after_market_strat_times = ["9:30,16,18", "7,9:30,16"]
 	AM_PM_Change_Average_strat = Strategy(strategy_name, None, None, None, difference_instructions, "am")
-
+	local_dir = os.getcwd()
 	if pull_list and not os.path.exists(strategy_name + ".json"):
-		cp = CalendarParser("white_list.txt", os.getcwd() + "\\dates")
+		cp = CalendarParser("white_list.txt", local_dir + "\\dates")
 		cp.loadCached(False)
 		AM_PM_Change_Average_strat.gather_data(cp.earnings_map, pull_list, yahoo_daily=True)
 
 	earnings_return_data_map = AM_PM_Change_Average_strat.pull_cache_data()
+
+	AM_PM_Change_Average_strat.generate_daily_csv_library(earnings_return_data_map, "earnings_call_difference_data", local_dir, preferred)
