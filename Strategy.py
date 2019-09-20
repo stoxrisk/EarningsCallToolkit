@@ -26,37 +26,47 @@ class _csvRecorder:
 
 
 	def generatSmallCSVs(self, earnings_data_map, local_dir, preferred, sp500="preferred", other="other"):
-		sp500_data_path = local_dir + self.filename + "\\preferred"
-		for symbol in earnings_return_data_map:
-			final_path =  sp500_data_path + "\\%s" % symbol + ".csv"
-			csv_str = "Earnings Dates: ,"
-			earnings_before_temp = []
-			earnings_after_temp = []
-			difference_temp = []
-			for date in earnings_return_data_map[symbol]:
-				csv_str += date + ","
-				earnings_before = earnings_return_data_map[symbol][date][close_list][0]
-				earnings_before_temp.append(earnings_before)
-				earnings_after = earnings_return_data_map[symbol][date][close_list][1]
-				earnings_after_temp.append(earnings_after)
-				difference_percentage = ((earnings_after - earnings_before)/earnings_before)*100
-				difference_temp.append(str(difference_percentage) + "%%")
-			csv_str += "\nBefore Earnings:,"
-			for before in earnings_before_temp:
-				csv_str += before + ","
-			csv_str += "\nAfter Earnings:,"
-			for after in earnings_before_temp:
-				csv_str += after + ","
-			csv_str += "\nDifference:,"
-			total_dif = 0
-			for diff in earnings_before_temp:
-				total_dif += diff
-				csv_str += diff + ","
-			csv_str += "\nAverage Difference:,%f"%(total_dif/len(difference_temp))
-			csv_file = open(final_path, "w") 
-			csv_file.write(csv_str)
-			csv_file.close()
-
+		sp500_data_path = local_dir + "\\" + self.filename + "\\preferred"
+		reserved_words = ["after_market_strat_times", "difference_instructions"]
+		for symbol in earnings_data_map:
+			if symbol not in reserved_words:
+			# try:
+				print("Generating Earnings Call info for: "  +symbol)
+				if earnings_data_map[symbol] == {}:
+					continue
+				final_path =  sp500_data_path + "\\%s" % symbol + ".csv"
+				csv_str = "Earnings Dates: ,"
+				earnings_before_temp = []
+				earnings_after_temp = []
+				difference_temp = []
+				for date in earnings_data_map[symbol]:
+					if date == '' or earnings_data_map[symbol][date] == {}:
+						continue
+					csv_str += date + ","
+					earnings_before = earnings_data_map[symbol][date]["close_list"][0]
+					earnings_before_temp.append(earnings_before)
+					earnings_after = earnings_data_map[symbol][date]["close_list"][1]
+					earnings_after_temp.append(earnings_after)
+					difference_percentage = earnings_data_map[symbol][date]["diff_array"][1]
+					difference_temp.append(difference_percentage)
+				if(len(earnings_before_temp) > 0):
+					csv_str += "\nBefore Earnings:,"
+					for before in earnings_before_temp:
+						csv_str += str(before) + ","
+					csv_str += "\nAfter Earnings:,"
+					for after in earnings_after_temp:
+						csv_str += str(after) + ","
+					csv_str += "\nDifference:,"
+					total_dif = 0
+					for diff in difference_temp:
+						total_dif += abs(diff)
+						csv_str += str(diff) + "%,"
+					csv_str += "\nAverage Difference:,%f"%(total_dif/len(difference_temp))
+					csv_file = open(final_path, "w") 
+					csv_file.write(csv_str)
+					csv_file.close()
+			# except:
+			# 	print("No data for %s" % symbol)
 		# Handle the sp500 data
 		
 
