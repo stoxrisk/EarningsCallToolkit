@@ -58,10 +58,31 @@ class _csvRecorder:
 						csv_str += str(after) + ","
 					csv_str += "\nDifference:,"
 					total_dif = 0
+					positive_count = 0
+					positive_average = 0
+					negative_count = 0
+					negative_average = 0
 					for diff in difference_temp:
+						if diff >= 0:
+							positive_count += 1
+							positive_average += diff
+						else:
+							negative_count += 1
+							negative_average -= diff
 						total_dif += abs(diff)
 						csv_str += str(diff) + "%,"
-					csv_str += "\nAverage Difference:,%f"%(total_dif/len(difference_temp))
+
+					csv_str += "\nPositive Change Percentage:,%f%%"%(positive_count/len(difference_temp)*100)
+					csv_str += "\nNegative Change Percentage:,%f%%\n"%(negative_count/len(difference_temp)*100)
+					csv_str += "\nAbsolute Average Difference:,%f%%"%(total_dif/len(difference_temp))
+					try:
+						csv_str += "\nPositive Average Difference:,%f%%"%(positive_average/positive_count)
+					except:
+						print("No positive Earnings Calls")
+					try:
+						csv_str += "\nNegative Average Difference:,-%f%%"%(negative_average/negative_count)
+					except:
+						print("No negative Earnings Calls")
 					csv_file = open(final_path, "w") 
 					csv_file.write(csv_str)
 					csv_file.close()
