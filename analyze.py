@@ -9,9 +9,12 @@ def start():
     if sys.argv[1] == '1':
         earnings_map = Strategy.AM_strategy1(pull_list=sp500_list)
     elif sys.argv[1] == '2':
-        earnings_map = Strategy.AM_PM_Change_Average(pull_list=sp500_list)
+        if len(sys.argv) > 2:
+            print('lol')
+            pull_list = Strategy.AM_PM_Change_Average(pull_list=[sys.argv[2]], additional_pull=True)
+        else:
+            earnings_map = Strategy.AM_PM_Change_Average(pull_list=sp500_list)
         # earnings_map = Strategy.AM_PM_Change_Average(pull_list=["ADT"])
-
 
 if __name__ == '__main__':
     # freeze_support()

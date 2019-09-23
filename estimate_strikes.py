@@ -5,7 +5,6 @@ from yahoofinancials import YahooFinancials
 
 # Code for gathering the latest day
 latest_day = date.today() - timedelta(days=1)
-print(latest_day.strftime('%A'))
 if latest_day.strftime('%A') == 'Saturday':
     latest_day = latest_day - timedelta(days=3)
 elif latest_day.strftime('%A') == 'Sunday':

@@ -25,16 +25,16 @@ class _csvRecorder:
 		self.filename = filename
 
 
-	def generatSmallCSVs(self, earnings_data_map, local_dir, preferred, sp500="preferred", other="other"):
-		sp500_data_path = local_dir + "\\" + self.filename + "\\preferred"
+	def generateSmallCSVs(self, earnings_data_map, local_dir, select=[]):
 		reserved_words = ["after_market_strat_times", "difference_instructions"]
-		for symbol in earnings_data_map:
+		symbol_list = earnings_data_map if not select else select
+		for symbol in symbol_list:
 			if symbol not in reserved_words:
 			# try:
-				print("Generating Earnings Call info for: "  +symbol)
+				print("Generating Earnings Call info for: " + symbol)
 				if earnings_data_map[symbol] == {}:
 					continue
-				final_path =  sp500_data_path + "\\%s" % symbol + ".csv"
+				final_path =  local_dir + "\\%s" % symbol + ".csv"
 				csv_str = "Earnings Dates: ,"
 				earnings_before_temp = []
 				earnings_after_temp = []
@@ -88,12 +88,6 @@ class _csvRecorder:
 					csv_file.close()
 			# except:
 			# 	print("No data for %s" % symbol)
-		# Handle the sp500 data
-		
-
-		# Handle the non sp500 data 
-		if not preferred:
-			pass
 
 	"""
 	This method generates a csv based on the earnings map data generated from the Strategy Class. The CSV
@@ -367,7 +361,7 @@ class Strategy():
 	symbol_list: list of symbols to gather the data for
 	Returns: Nothing, but writes a json file to store the data
 	"""
-	def gather_data(self, earnings_map, symbol_list, yahoo_daily=False):
+	def gather_data(self, earnings_map, symbol_list, yahoo_daily=False, write=True):
 		self.strategy_earnings_cache["after_market_strat_times"] = self.after_market_strat_times
 		self.strategy_earnings_cache["difference_instructions"] = self.difference_instructions
 		eastern = pytz.timezone('US/Eastern')
@@ -470,16 +464,27 @@ class Strategy():
 					continue 
 
 		# Store the data for next time
-		self.write_earnings_cache(self.strategy_name + ".json", self.strategy_earnings_cache)
+		if write:
+			self.write_earnings_cache(self.strategy_name + ".json", self.strategy_earnings_cache)
 
 
-	# Load up previously gathered data into a map
-	def pull_cache_data(self):
+	# Load up previously gathered data into a map, add new data if needed
+	def pull_cache_data(self, strategy_name=None, earnings_map=None, pull_list=None):
 		f = open(self.strategy_name + ".json", 'r')	
-		contents = f.read()
+		contents = f.read()	
 		f.close()
-		self.strategy_earnings_cache =  json.loads(contents)
-		return self.strategy_earnings_cache
+		current_strategy_earnings_cache =  json.loads(contents)
+		if pull_list:
+			print(pull_list)
+			if pull_list[0] not in current_strategy_earnings_cache:
+				self.gather_data(earnings_map, pull_list, yahoo_daily=True, write=False)
+			for symbol in pull_list:
+				if symbol not in current_strategy_earnings_cache:
+					current_strategy_earnings_cache[symbol] = self.strategy_earnings_cache[symbol]
+			self.write_earnings_cache(self.strategy_name + ".json", current_strategy_earnings_cache)
+
+		self.strategy_earnings_cache = current_strategy_earnings_cache
+		return current_strategy_earnings_cache
 
 
 	# Write the gathered data into a json format file for quick use again
@@ -504,9 +509,10 @@ class Strategy():
 		csv.generateCSV(self.strategy_earnings_cache, titles)
 
 
-	def generate_daily_csv_library(self, earnings_data_map, folder_name, local_dir, preferred):
+	def generate_daily_csv_library(self, earnings_data_map, folder_name, local_dir, select=[]):
 		csv = _csvRecorder(folder_name, None)
-		csv.generatSmallCSVs(earnings_data_map, local_dir, preferred)
+		csv.generateSmallCSVs(earnings_data_map, local_dir + "\\%s"%folder_name, select)
+
 
 
 	def redefine_diff_arrays(self, symbol_list, new_difference_instructions):
@@ -558,17 +564,20 @@ def AM_strategy1(pull_list=None):
 Change Average:
 Goal: The purpose of this strategy is to analyze the average difference of price before and after earnings calls
 """
-def AM_PM_Change_Average(pull_list=None, preferred=True):
+def AM_PM_Change_Average(pull_list=None, additional_pull=False):
 	strategy_name = "AM_PM_Change_Average_strat"
 	difference_instructions =  ["0:1"]
-	# after_market_strat_times = ["9:30,16,18", "7,9:30,16"]
 	AM_PM_Change_Average_strat = Strategy(strategy_name, None, None, None, difference_instructions, "am")
 	local_dir = os.getcwd()
-	if pull_list and not os.path.exists(strategy_name + ".json"):
-		cp = CalendarParser("white_list.txt", local_dir + "\\dates")
-		cp.loadCached(False)
+	cp = CalendarParser("white_list.txt", local_dir + "\\dates")
+	cp.loadCached(True)
+	if pull_list and not os.path.exists(strategy_name + ".json"):	
 		AM_PM_Change_Average_strat.gather_data(cp.earnings_map, pull_list, yahoo_daily=True)
 
-	earnings_return_data_map = AM_PM_Change_Average_strat.pull_cache_data()
-
-	AM_PM_Change_Average_strat.generate_daily_csv_library(earnings_return_data_map, "earnings_call_difference_data", local_dir, preferred)
+	if pull_list and additional_pull:
+		earnings_return_data_map = AM_PM_Change_Average_strat.pull_cache_data(earnings_map=cp.earnings_map, strategy_name=strategy_name, pull_list=pull_list)
+		AM_PM_Change_Average_strat.generate_daily_csv_library(earnings_return_data_map, "earnings_call_difference_data", local_dir, select=pull_list)
+	else:
+		earnings_return_data_map = AM_PM_Change_Average_strat.pull_cache_data()
+		AM_PM_Change_Average_strat.generate_daily_csv_library(earnings_return_data_map, "earnings_call_difference_data", local_dir)
+	
