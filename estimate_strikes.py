@@ -19,7 +19,7 @@ symbol = sys.argv[1]
 symbol_yahoo_finance_interactor = YahooFinancials(symbol)
 earnings_days_data = symbol_yahoo_finance_interactor.get_historical_price_data(day_before_latest_str, latest_day_str, 'daily')
 
-symbol_file = os.getcwd() + "\\earnings_call_difference_data\\preferred\\%s.csv"%symbol
+symbol_file = os.getcwd() + "\\earnings_call_difference_data\\%s.csv"%symbol
 csv_file = open(symbol_file, "r") 
 # print(csv_file.read())
 
@@ -30,6 +30,14 @@ absolute_diff = float(lines[7].rstrip().split(',')[1][:-1])
 positive_diff = float(lines[8].rstrip().split(',')[1][:-1])
 negative_diff = float(lines[9].rstrip().split(',')[1][:-1])
 
+earnings_date_list = lines[0].rstrip().split(',')
+diff_list = lines[3].rstrip().split(',')
+
+for i in range(1, len(lines[0])):
+    if diff_list[i] == "":
+        break
+    print("Earnings Date %s: %f"%(earnings_date_list[i], float(diff_list[i][:-1])))
+print("-----------------------------------------")
 print("Absolute Difference Average: %f"% absolute_diff)
 print("Positive Difference Average: %f"% positive_diff)
 print("Negative Difference Average: %f"% negative_diff)
@@ -39,6 +47,6 @@ current_price = earnings_days_data[symbol]['prices'][0]['close']
 print("Current Price: %f"%current_price)
 lower_strike = (round((current_price - ((abs(negative_diff)/100)*current_price))*2))/2
 higher_strike = (round((current_price + ((positive_diff/100)*current_price))*2))/2
-print("Lower Strike: %f"%lower_strike)
-print("Higher Strike: %f"%higher_strike)
+print("Recommended Lower Strike: %f"%lower_strike)
+print("Recommended Higher Strike: %f"%higher_strike)
 csv_file.close()
