@@ -10,7 +10,6 @@ def start():
         earnings_map = Strategy.AM_strategy1(pull_list=sp500_list)
     elif sys.argv[1] == '2':
         if len(sys.argv) > 2:
-            print('lol')
             pull_list = Strategy.AM_PM_Change_Average(pull_list=[sys.argv[2]], additional_pull=True)
         else:
             earnings_map = Strategy.AM_PM_Change_Average(pull_list=sp500_list)

@@ -2,7 +2,6 @@ import sys
 import os 
 from datetime import timedelta, date, datetime
 from yahoofinancials import YahooFinancials
-
 # Code for gathering the latest day
 latest_day = date.today() - timedelta(days=1)
 if latest_day.strftime('%A') == 'Saturday':
@@ -33,14 +32,21 @@ negative_diff = float(lines[9].rstrip().split(',')[1][:-1])
 earnings_date_list = lines[0].rstrip().split(',')
 diff_list = lines[3].rstrip().split(',')
 
+print("-----------------------------------------")
 for i in range(1, len(lines[0])):
     if diff_list[i] == "":
         break
-    print("Earnings Date %s: %f"%(earnings_date_list[i], float(diff_list[i][:-1])))
+    print("Earnings Date %s: %f%%"%(earnings_date_list[i], float(diff_list[i][:-1])))
+
 print("-----------------------------------------")
-print("Absolute Difference Average: %f"% absolute_diff)
-print("Positive Difference Average: %f"% positive_diff)
-print("Negative Difference Average: %f"% negative_diff)
+print("Chance of Rising: %s"%lines[4].split(',')[1].rstrip())
+print("Chance of Falling: %s"%lines[5].split(',')[1].rstrip())
+
+print("-----------------------------------------")
+print("Absolute Difference Average: %f%%"% absolute_diff)
+print("Positive Difference Average: %f%%"% positive_diff)
+print("Negative Difference Average: %f%%"% negative_diff)
+print("-----------------------------------------")
 # print(earnings_days_data)
 current_price = earnings_days_data[symbol]['prices'][0]['close']
 
@@ -49,4 +55,5 @@ lower_strike = (round((current_price - ((abs(negative_diff)/100)*current_price))
 higher_strike = (round((current_price + ((positive_diff/100)*current_price))*2))/2
 print("Recommended Lower Strike: %f"%lower_strike)
 print("Recommended Higher Strike: %f"%higher_strike)
+print("-----------------------------------------")
 csv_file.close()

@@ -475,7 +475,6 @@ class Strategy():
 		f.close()
 		current_strategy_earnings_cache =  json.loads(contents)
 		if pull_list:
-			print(pull_list)
 			if pull_list[0] not in current_strategy_earnings_cache:
 				self.gather_data(earnings_map, pull_list, yahoo_daily=True, write=False)
 			for symbol in pull_list:
