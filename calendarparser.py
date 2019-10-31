@@ -21,14 +21,16 @@ class CalendarParser():
 		if append_new_data:
 			# set it to one day after
 			start_date =  datetime.datetime.strptime(self.getStartingDate(), "%Y%m%d")
-			print(start_date)
+			print("Date last gathered for was: " + start_date.strftime("%Y%m%d"))
 			end_date = datetime.datetime.now()
 		self.getDates(start_date, end_date)
-		print(self.dates)
-		return
 		preferred_dir = self.dir + "\\preferred"
 		other_dir = self.dir + "\\other"
 		api_url = "https://api.earningscalendar.net/?date="
+		if len(self.dates) < 1:
+			print("You have the latest earnings information!")
+		else:
+			print("Need to get the following dates:\n" + str(self.dates))
 		for date in self.dates: 
 			response = requests.request(method="GET", url = api_url + date)
 			response_map = json.loads(response.content)
@@ -108,7 +110,6 @@ class CalendarParser():
 				date = datetime_split[0]
 
 				if len(date)>0 and int(date) > last_latest_date:
-					print(name)
 					last_latest_date = int(date)
 		for name in other_files:
 			final_path = other_path + name
@@ -120,7 +121,6 @@ class CalendarParser():
 				date = datetime_split[0]
 
 				if len(date)>0 and int(date) > last_latest_date:
-					print(name)
 					last_latest_date = int(date)
 
 		return str(last_latest_date+1)
