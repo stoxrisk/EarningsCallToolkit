@@ -362,7 +362,7 @@ class Strategy():
     symbol_list: list of symbols to gather the data for
     Returns: Nothing, but writes a json file to store the data
     """
-    def gather_data(self, earnings_map, symbol_list, yahoo_daily=False, write=True):
+    def gather_data(self, earnings_map, symbol_list, yahoo_daily=False, write=True, append_cache=False):
         self.strategy_earnings_cache["after_market_strat_times"] = self.after_market_strat_times
         self.strategy_earnings_cache["difference_instructions"] = self.difference_instructions
         eastern = pytz.timezone('US/Eastern')
@@ -383,8 +383,15 @@ class Strategy():
                 print("Don't have the earnings data for %s"%symbol)
                 continue
             for earningsdate in earnings_date_list:
+                
                 dateandtime = earningsdate.split(":")
-                self.strategy_earnings_cache[symbol][dateandtime[0]] = {}
+                if append_cache:
+                    if dateandtime[0] in self.strategy_earnings_cache[symbol]:
+                        #Don't repeat data when appending
+                        continue
+                else:
+                    self.strategy_earnings_cache[symbol][dateandtime[0]] = {}
+
                 if not yahoo_daily:
                     
                     if dateandtime[0] == '':
@@ -470,7 +477,7 @@ class Strategy():
 
 
     # Load up previously gathered data into a map, add new data if needed
-    def pull_cache_data(self, strategy_name=None, earnings_map=None, pull_list=None):
+    def pull_cache_data(self, earnings_map=None, pull_list=None):
         f = open(self.strategy_name + ".json", 'r')    
         contents = f.read()    
         f.close()
@@ -581,3 +588,4 @@ def AM_PM_Change_Average(pull_list=None, additional_pull=False):
         earnings_return_data_map = AM_PM_Change_Average_strat.pull_cache_data()
         AM_PM_Change_Average_strat.generate_daily_csv_library(earnings_return_data_map, "earnings_call_difference_data", local_dir)
     
+

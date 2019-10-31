@@ -6,6 +6,7 @@ import time
 import json
 import os
 from datetime import timedelta, date
+import datetime
 
 
 class CalendarParser():
@@ -16,8 +17,15 @@ class CalendarParser():
 		self.dir = os.path.join(output_dir)
 
 	# First time use
-	def pullandStoreEarningsDates(self, start_date="20121101", end_date="20190815"):
+	def pullandStoreEarningsDates(self, append_new_data=True):
+		if append_new_data:
+			# set it to one day after
+			start_date =  datetime.datetime.strptime(self.getStartingDate(), "%Y%m%d")
+			print(start_date)
+			end_date = datetime.datetime.now()
 		self.getDates(start_date, end_date)
+		print(self.dates)
+		return
 		preferred_dir = self.dir + "\\preferred"
 		other_dir = self.dir + "\\other"
 		api_url = "https://api.earningscalendar.net/?date="
@@ -78,8 +86,42 @@ class CalendarParser():
 			datestr = single_date.strftime("%Y%m%d")
 			self.dates.append(datestr)
 
-# Commands to create all the data in /dates
-# start_date = date(2018, 6, 13)
-# end_date = date(2019, 8, 14)
-# cp = CalendarParser("white_list.txt","C:\\\\Users\\Andrew\\Google Drive\\Dropbox\\stox\\EarningsCallToolkit\\dates", start_date, end_date)
-# cp.createMap()
+
+	# The purpose of this method is to find out what the last date that data was gathered for
+	# and return the day after so that the program can start from there
+	def getStartingDate(self):
+		last_latest_date = 0
+		preferred_dir = self.dir + "\\preferred"
+		other_dir = self.dir + "\\other"
+		preferred_path = "%s\\"%(preferred_dir)
+		other_path = "%s\\"%(other_dir)
+		preferred_files = os.listdir(preferred_path)
+		other_files = os.listdir(other_path)
+		# Search through both directories for the last date gathered for it
+		for name in preferred_files:
+			final_path = preferred_path + name
+			f = open(final_path, 'r')
+			data = f.read()
+			datetimes = data.split(",")
+			for dt in datetimes:
+				datetime_split = dt.split(":")
+				date = datetime_split[0]
+
+				if len(date)>0 and int(date) > last_latest_date:
+					print(name)
+					last_latest_date = int(date)
+		for name in other_files:
+			final_path = other_path + name
+			f = open(final_path, 'r')
+			data = f.read()
+			datetimes = data.split(",")
+			for dt in datetimes:
+				datetime_split = dt.split(":")
+				date = datetime_split[0]
+
+				if len(date)>0 and int(date) > last_latest_date:
+					print(name)
+					last_latest_date = int(date)
+
+		return str(last_latest_date+1)
+		# TODO parse through all the files and determine the latest date
