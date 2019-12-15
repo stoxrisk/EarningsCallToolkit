@@ -373,9 +373,13 @@ class Strategy():
                 expected_size += len(market_time.split(","))
         else:
             expected_size = 2
+
+        if append_cache and symbol_list is None:
+            symbol_list = list(self.strategy_earnings_cache.keys())
         
         for symbol in symbol_list:
-            self.strategy_earnings_cache[symbol] = {}
+            if symbol not in self.strategy_earnings_cache:
+                self.strategy_earnings_cache[symbol] = {}
             print("Analyzing data for %s"%symbol)
             try:
                 earnings_date_list = earnings_map[symbol]
@@ -385,10 +389,9 @@ class Strategy():
             for earningsdate in earnings_date_list:
                 
                 dateandtime = earningsdate.split(":")
-                if append_cache:
-                    if dateandtime[0] in self.strategy_earnings_cache[symbol]:
-                        #Don't repeat data when appending
-                        continue
+                if append_cache and dateandtime[0] in self.strategy_earnings_cache[symbol]:
+                    #Don't repeat data when appending
+                    continue
                 else:
                     self.strategy_earnings_cache[symbol][dateandtime[0]] = {}
 
@@ -465,7 +468,6 @@ class Strategy():
                 # If we were able to retrieve the data add it to the map
                 if(close_list and close_list[0] > 0):
                     diff_array = self.tk.priceArrayToDifferenceArray(close_list, self.difference_instructions)
-                    # print(close_list)
                     self.strategy_earnings_cache[symbol][dateandtime[0]]["diff_array"] = diff_array
                     self.strategy_earnings_cache[symbol][dateandtime[0]]["close_list"] = close_list
                 elif close_list is False:
@@ -474,6 +476,7 @@ class Strategy():
         # Store the data for next time
         if write:
             self.write_earnings_cache(self.strategy_name + ".json", self.strategy_earnings_cache)
+            print("Written Successfully")
 
 
     # Load up previously gathered data into a map, add new data if needed
@@ -582,7 +585,7 @@ def AM_PM_Change_Average(pull_list=None, additional_pull=False):
         AM_PM_Change_Average_strat.gather_data(cp.earnings_map, pull_list, yahoo_daily=True)
 
     if pull_list and additional_pull:
-        earnings_return_data_map = AM_PM_Change_Average_strat.pull_cache_data(earnings_map=cp.earnings_map, strategy_name=strategy_name, pull_list=pull_list)
+        earnings_return_data_map = AM_PM_Change_Average_strat.pull_cache_data(earnings_map=cp.earnings_map, pull_list=pull_list)
         AM_PM_Change_Average_strat.generate_daily_csv_library(earnings_return_data_map, "earnings_call_difference_data", local_dir, select=pull_list)
     else:
         earnings_return_data_map = AM_PM_Change_Average_strat.pull_cache_data()

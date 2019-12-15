@@ -1,6 +1,11 @@
 from calendarparser import CalendarParser
 import Strategy
 import sys
+import os
+
+difference_instructions_by_strategy = {
+    "AM_PM_Change_Average_strat": ["0:1"]
+}
 
 def update_caches_with_latest():
     try:
@@ -10,13 +15,19 @@ def update_caches_with_latest():
         # print("enter a valid strategy name")
         # exit(0)
 
+    local_dir = os.getcwd()
+
     cp = CalendarParser("white_list.txt", "dates")
     cp.pullandStoreEarningsDates(append_new_data=True)
     cp.loadCached()
 
-    # strategy = Strategy(strategy_name, None, None, None, difference_instructions, "am")
-    # strategy.pull_cache_data()
-    # strategy.gather_data(self, cp.earnings_map, symbol_list, yahoo_daily=False, write=True, append_cache=True)
+    strategy = Strategy.Strategy(strategy_name, None, None, None, difference_instructions_by_strategy[strategy_name], "am")
+    strategy.pull_cache_data()
+    strategy.gather_data(cp.earnings_map, None, yahoo_daily=True, write=True, append_cache=True)
+    earnings_return_data_map = strategy.pull_cache_data()
+
+    if strategy_name == "AM_PM_Change_Average_strat":
+        strategy.generate_daily_csv_library(earnings_return_data_map, "earnings_call_difference_data", local_dir)
 
 
     # Open file with name, read into map
