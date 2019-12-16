@@ -7,6 +7,7 @@ import os
 import subprocess
 
 def start():
+    print("Now starting the Daily Run")
     # todaysdate = "20191211"
     todaysdate = datetime.now()
     # todaysdate = todaysdate.replace(day=4)
