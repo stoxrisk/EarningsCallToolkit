@@ -4,6 +4,7 @@
     <list default="true" id="d3ee8186-2ff5-4d7c-8b17-344dff9a0d37" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/daily_run.bat" beforeDir="false" afterPath="$PROJECT_DIR$/daily_run.bat" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/daily_run.py" beforeDir="false" afterPath="$PROJECT_DIR$/daily_run.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/docs/index.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/estimate_strikes.py" beforeDir="false" afterPath="$PROJECT_DIR$/estimate_strikes.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -123,6 +124,7 @@
     </panes>
   </component>
   <component name="PropertiesComponent">
+    <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
     <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
   </component>
