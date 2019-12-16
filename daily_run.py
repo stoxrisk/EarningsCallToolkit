@@ -10,8 +10,8 @@ from twilio.rest import Client
 
 def start():
     print("Now starting the Daily Run")
-    # todaysdate = "20191211"
     todaysdate = datetime.now()
+    # Manual Date testing \/
     # todaysdate = todaysdate.replace(day=11)
     todays_string = todaysdate.strftime("%Y%m%d")
     # First update the data 
@@ -19,9 +19,9 @@ def start():
     text_message_content = "Goodmorning! the earnings reported today, %s, day are:\n"%todaysdate.strftime("%m-%d-%Y")
 
     # Only update on the weekday
-    # if todaysdate.weekday() < 5:
-    #     print("Now updating with the latest earnings calls dates")
-    #     update_caches_with_latest()
+    if todaysdate.weekday() < 5:
+        print("Now updating with the latest earnings calls dates")
+        update_caches_with_latest()
 
     # Get Earnings data for the day
 
@@ -50,12 +50,12 @@ def start():
     f.write(html_string)
     f.close()
 
-    text_message_content
-
     account_sid = os.getenv('twilio_sid')
     auth_token = os.getenv('twilio_token')
     
     client = Client(account_sid, auth_token)
+
+    text_message_content += "View here: https://stoxrisk.github.io/EarningsCallToolkit/"
 
     message = client.messages \
                     .create(
