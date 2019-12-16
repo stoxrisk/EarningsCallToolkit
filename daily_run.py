@@ -9,7 +9,7 @@ import subprocess
 def start():
     # todaysdate = "20191211"
     todaysdate = datetime.now()
-    todaysdate = todaysdate.replace(day=12)
+    todaysdate = todaysdate.replace(day=13)
     todays_string = todaysdate.strftime("%Y%m%d")
     # First update the data 
 
