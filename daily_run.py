@@ -9,13 +9,13 @@ import subprocess
 def start():
     # todaysdate = "20191211"
     todaysdate = datetime.now()
-    todaysdate = todaysdate.replace(day=4)
+    # todaysdate = todaysdate.replace(day=4)
     todays_string = todaysdate.strftime("%Y%m%d")
     # First update the data 
 
     # Only update on the weekday
-    # if todaysdate.weekday() < 5:
-    #     update_caches_with_latest()
+    if todaysdate.weekday() < 5:
+        update_caches_with_latest()
 
     # Get Earnings data for the day
 
