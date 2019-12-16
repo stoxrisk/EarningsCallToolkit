@@ -22,9 +22,15 @@ def start(arg = None):
         if day_before_latest.strftime('%A') == "Sunday":
             day_before_latest = day_before_latest - timedelta(days=2)
         day_before_latest_str = day_before_latest.strftime('%Y-%m-%d')
+        print(day_before_latest_str)
+        print(latest_day_str)
         symbol_yahoo_finance_interactor = YahooFinancials(symbol)
         earnings_days_data = symbol_yahoo_finance_interactor.get_historical_price_data(day_before_latest_str, latest_day_str, 'daily')
-        current_price = earnings_days_data[symbol]['prices'][0]['close']
+        print(earnings_days_data)
+        try:
+            current_price = earnings_days_data[symbol]['prices'][0]['close']
+        except:
+            print('Was not able to pull price from Yahoo Finance for symbol %s' % symbol)
 
     try:
         symbol_file = os.getcwd() + "\\earnings_call_difference_data\\%s.csv"%symbol
