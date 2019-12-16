@@ -79,10 +79,12 @@ class _csvRecorder:
                         csv_str += "\nPositive Average Difference:,%f%%"%(positive_average/positive_count)
                     except:
                         print("No positive Earnings Calls")
+                        csv_str += "\nPositive Average Difference:,0%"
                     try:
                         csv_str += "\nNegative Average Difference:,-%f%%"%(negative_average/negative_count)
                     except:
                         print("No negative Earnings Calls")
+                        csv_str += "\nNegative Average Difference:,0%"
                     csv_file = open(final_path, "w") 
                     csv_file.write(csv_str)
                     csv_file.close()
