@@ -5,21 +5,27 @@ import requests
 import json
 import os
 import subprocess
+from twilio.rest import Client
+
 
 def start():
     print("Now starting the Daily Run")
     # todaysdate = "20191211"
     todaysdate = datetime.now()
-    # todaysdate = todaysdate.replace(day=4)
+    # todaysdate = todaysdate.replace(day=11)
     todays_string = todaysdate.strftime("%Y%m%d")
     # First update the data 
 
+    text_message_content = "Goodmorning! the earnings reported today, %s, day are:\n"%todaysdate.strftime("%m-%d-%Y")
+
     # Only update on the weekday
-    if todaysdate.weekday() < 5:
-        update_caches_with_latest()
+    # if todaysdate.weekday() < 5:
+    #     print("Now updating with the latest earnings calls dates")
+    #     update_caches_with_latest()
 
     # Get Earnings data for the day
 
+    print("Pinging the Earnings call API")
     calendar_api = "https://api.earningscalendar.net/?date=" + todays_string
     response = requests.request(method="GET", url = calendar_api)
     response_map = json.loads(response.content)
@@ -37,11 +43,28 @@ def start():
         html_stats = display_map[symbol].replace("\n", "<br>")
         html_string += '<h1>%s</h1>'%symbol 
         html_string += html_stats
+        text_message_content += "%s\n"%symbol
     html_string += "</html>"
 
     f = open("docs/index.html", "w")
     f.write(html_string)
     f.close()
+
+    text_message_content
+
+    account_sid = os.getenv('twilio_sid')
+    auth_token = os.getenv('twilio_token')
+    
+    client = Client(account_sid, auth_token)
+
+    message = client.messages \
+                    .create(
+                         body=text_message_content,
+                         from_='+12015716291',
+                         to='+17034010650'
+                     )
+
+    print(message.sid)
 
 if __name__ == '__main__':
     # freeze_support()
