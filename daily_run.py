@@ -27,8 +27,9 @@ def start():
     for symbol_earnings in response_map:
         symbol = symbol_earnings["ticker"]
         formatted_statistics = estimate_strikes.start(symbol)
-        display_map[symbol] = formatted_statistics
-        print(formatted_statistics)
+        if formatted_statistics:
+            display_map[symbol] = formatted_statistics
+            print(formatted_statistics)
 
     html_string = '<html>\n<link rel="stylesheet" href="styles.css">\n'
     for symbol in display_map:

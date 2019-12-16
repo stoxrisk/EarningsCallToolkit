@@ -33,7 +33,11 @@ def start(arg = None):
         import Strategy
         pull_list = Strategy.AM_PM_Change_Average(pull_list=[symbol], additional_pull=True)
         symbol_file = os.getcwd() + "\\earnings_call_difference_data\\%s.csv"%symbol
-        csv_file = open(symbol_file, "r")
+        try:
+            csv_file = open(symbol_file, "r")
+        except:
+            print("No data for earnings calls could be called for %s"%symbol)
+            return None
 
     lines = csv_file.readlines()
 
