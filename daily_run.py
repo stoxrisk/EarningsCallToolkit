@@ -11,6 +11,11 @@ from twilio.rest import Client
 def start():
     print("Now starting the Daily Run")
     todaysdate = datetime.now()
+    
+    if todaysdate.weekday() > 4:
+        print("Not running, this is the weekend")
+        return
+
     # Manual Date testing \/
     # todaysdate = todaysdate.replace(day=11)
     todays_string = todaysdate.strftime("%Y%m%d")
