@@ -125,5 +125,5 @@ class CalendarParser():
 
 
 		
-		return datetime.datetime.strptime(last_latest_date, "%Y%m%d") + datetime.datetime.timedelta(days=1)
+		return (datetime.datetime.strptime(str(last_latest_date), "%Y%m%d") + datetime.datetime.timedelta(days=1))
 		# TODO parse through all the files and determine the latest date
