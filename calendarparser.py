@@ -20,8 +20,7 @@ class CalendarParser():
 	def pullandStoreEarningsDates(self, append_new_data=True):
 		if append_new_data:
 			# set it to one day after
-			print(self.getStartingDate())
-			start_date =  datetime.datetime.strptime(self.getStartingDate(), "%Y%m%d")
+			start_date =  self.getStartingDate()
 			print("Date last gathered for was: " + start_date.strftime("%Y%m%d"))
 			end_date = datetime.datetime.now()
 		self.getDates(start_date, end_date)
@@ -124,5 +123,7 @@ class CalendarParser():
 				if len(date)>0 and int(date) > last_latest_date:
 					last_latest_date = int(date)
 
-		return str(last_latest_date+1)
+
+		
+		return datetime.datetime.strptime(last_latest_date, "%Y%m%d") + datetime.datetime.timedelta(days=1)
 		# TODO parse through all the files and determine the latest date
