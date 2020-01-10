@@ -20,6 +20,7 @@ class CalendarParser():
 	def pullandStoreEarningsDates(self, append_new_data=True):
 		if append_new_data:
 			# set it to one day after
+			print(self.getStartingDate())
 			start_date =  datetime.datetime.strptime(self.getStartingDate(), "%Y%m%d")
 			print("Date last gathered for was: " + start_date.strftime("%Y%m%d"))
 			end_date = datetime.datetime.now()
