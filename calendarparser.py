@@ -16,6 +16,7 @@ class CalendarParser():
 		self.whitelist = text_list.split(",")
 		self.dir = os.path.join(output_dir)
 
+
 	# First time use
 	def pullandStoreEarningsDates(self, append_new_data=True):
 		if append_new_data:
@@ -50,6 +51,7 @@ class CalendarParser():
 			print("Data collected for: %s" % date)
 			time.sleep(1)
 
+
 	# Second and Sequential Time use
 	def loadCached(self, not_preferred=False):
 		self.earnings_map = {}
@@ -76,6 +78,8 @@ class CalendarParser():
 				for earnings_date in earnings_dates_list:
 					self.earnings_map[ticker].append(earnings_date)
 
+
+	# Returns 
 	def getDates(self, start_date, end_date):
 		self.dates = []
 		from datetime import timedelta, date
@@ -122,8 +126,6 @@ class CalendarParser():
 
 				if len(date)>0 and int(date) > last_latest_date:
 					last_latest_date = int(date)
-
-
 		
 		return (datetime.datetime.strptime(str(last_latest_date), "%Y%m%d") + datetime.timedelta(days=1))
 		# TODO parse through all the files and determine the latest date

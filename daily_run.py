@@ -1,5 +1,6 @@
 from gather_latest_earnings_data import update_caches_with_latest 
 import estimate_strikes
+import calendarparser
 from datetime import datetime
 import requests
 import json
@@ -12,9 +13,14 @@ def start():
     print("Now starting the Daily Run")
     todaysdate = datetime.now()
     
-    if todaysdate.weekday() > 4:
+    weekday_num = todaysdate.weekday()
+    if weekday_num > 4:
         print("Not running, this is the weekend")
         return
+    # Not Friday or Weekend
+    elif weekday_num < 4:
+        print("Getting earnings for ")
+
 
     # Manual Date testing \/
     # todaysdate = todaysdate.replace(day=11)
