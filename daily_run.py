@@ -1,6 +1,6 @@
 from gather_latest_earnings_data import update_caches_with_latest 
 import estimate_strikes
-import calendarparser
+from calendarparser import CalendarParser
 from datetime import datetime
 import requests
 import json
@@ -12,6 +12,10 @@ from twilio.rest import Client
 def start():
     print("Now starting the Daily Run")
     todaysdate = datetime.now()
+    todays_string = todaysdate.strftime("%Y%m%d")
+    calendar_api = "https://freeapi.earningscalendar.net/?date="
+    # Manual Date testing \/
+    # todaysdate = todaysdate.replace(day=11)
     
     weekday_num = todaysdate.weekday()
     if weekday_num > 4:
@@ -19,12 +23,11 @@ def start():
         return
     # Not Friday or Weekend
     elif weekday_num < 4:
-        print("Getting earnings for ")
-
-
-    # Manual Date testing \/
-    # todaysdate = todaysdate.replace(day=11)
-    todays_string = todaysdate.strftime("%Y%m%d")
+        print("Getting earnings for the week")
+        cp = CalendarParser("white_list.txt", "dates")
+        weekly_map = cp.getWeeklySchedule()
+   
+    
     # First update the data 
 
     text_message_content = "Goodmorning! the earnings reported today, %s, day are:\n"%todaysdate.strftime("%m-%d-%Y")
@@ -37,8 +40,8 @@ def start():
     # Get Earnings data for the day
 
     print("Pinging the Earnings call API")
-    calendar_api = "https://api.earningscalendar.net/?date=" + todays_string
-    response = requests.request(method="GET", url = calendar_api)
+    todays_calendar_ping = calendar_api + todays_string
+    response = requests.request(method="GET", url = todays_calendar_ping)
     response_map = json.loads(response.content)
     # Will hold the information that will get displayed
     display_map = {}
@@ -50,6 +53,13 @@ def start():
             print(formatted_statistics)
 
     html_string = '<html>\n<link rel="stylesheet" href="styles.css">\n'
+    for day,symboltimes in weekly_map.items():
+        html_string += "<h2>%s</h2>"%day
+        html_string += "-----------------------------------------<br>"
+        for symboltime in symboltimes:
+            html_string += "%s<br>"%symboltime
+
+
     for symbol in display_map:
         html_stats = display_map[symbol].replace("\n", "<br>")
         html_string += '<h1>%s</h1>'%symbol 
@@ -72,7 +82,7 @@ def start():
                     .create(
                          body=text_message_content,
                          from_='+12015716291',
-                         to='+17034010650'
+                         to=os.getenv('phone_number')
                      )
 
     print(message.sid)

@@ -8,6 +8,7 @@ import os
 from datetime import timedelta, date
 import datetime
 
+API_URL = "https://freeapi.earningscalendar.net/?date="
 
 class CalendarParser():
 	def __init__(self, filename, output_dir):
@@ -27,13 +28,13 @@ class CalendarParser():
 		self.getDates(start_date, end_date)
 		preferred_dir = self.dir + "\\preferred"
 		other_dir = self.dir + "\\other"
-		api_url = "https://api.earningscalendar.net/?date="
 		if len(self.dates) < 1:
 			print("You have the latest earnings information!")
 		else:
 			print("Need to get the following dates:\n" + str(self.dates))
 		for date in self.dates: 
-			response = requests.request(method="GET", url = api_url + date)
+			response = requests.request(method="GET", url = API_URL + date)
+			print(response.content)
 			response_map = json.loads(response.content)
 			for symbol_map in response_map:
 				current_symbol = symbol_map["ticker"]
@@ -79,7 +80,7 @@ class CalendarParser():
 					self.earnings_map[ticker].append(earnings_date)
 
 
-	# Returns 
+	# Generates and returns a range of dates
 	def getDates(self, start_date, end_date):
 		self.dates = []
 		from datetime import timedelta, date
@@ -129,3 +130,25 @@ class CalendarParser():
 		
 		return (datetime.datetime.strptime(str(last_latest_date), "%Y%m%d") + datetime.timedelta(days=1))
 		# TODO parse through all the files and determine the latest date
+
+
+	def getWeeklySchedule(self):
+		day_map = {}
+		todaysdate = datetime.datetime.now()
+		weekday_num = todaysdate.weekday()
+		for i in range(weekday_num, 5):
+			cur_day = todaysdate + timedelta(days=(i-weekday_num))
+			day_url = API_URL + cur_day.strftime("%Y%m%d")
+			print(day_url)
+			response = requests.request(method="GET", url = day_url)
+			print(response.content)
+			for symbol_earnings in json.loads(response.content):
+				symbol = symbol_earnings["ticker"]
+				ec_time = symbol_earnings["when"]
+				weekday_word = cur_day.strftime("%A")
+				if weekday_word in day_map:
+					day_map[weekday_word].append("%s:%s"%(symbol,ec_time))
+				else:
+					day_map[weekday_word] = []
+		# print(day_map)
+		return day_map
