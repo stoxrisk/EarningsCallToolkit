@@ -13,6 +13,7 @@ def start():
     print("Now starting the Daily Run")
     todaysdate = datetime.now()
     todays_string = todaysdate.strftime("%Y%m%d")
+    # They removed the free link, so I no longer have access to the latest earnings data, program is depreciated
     calendar_api = "https://freeapi.earningscalendar.net/?date="
     # Manual Date testing \/
     # todaysdate = todaysdate.replace(day=11)
