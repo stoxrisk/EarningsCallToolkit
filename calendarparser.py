@@ -26,8 +26,8 @@ class CalendarParser():
 			print("Date last gathered for was: " + start_date.strftime("%Y%m%d"))
 			end_date = datetime.datetime.now()
 		self.getDates(start_date, end_date)
-		preferred_dir = self.dir + "\\preferred"
-		other_dir = self.dir + "\\other"
+		preferred_dir = self.dir + "/preferred"
+		other_dir = self.dir + "/other"
 		if len(self.dates) < 1:
 			print("You have the latest earnings information!")
 		else:
@@ -39,9 +39,9 @@ class CalendarParser():
 			for symbol_map in response_map:
 				current_symbol = symbol_map["ticker"]
 				if current_symbol in self.whitelist:
-					final_path = "%s\\%s.txt"%(preferred_dir, current_symbol)
+					final_path = "%s/%s.txt"%(preferred_dir, current_symbol)
 				else:
-					final_path = "%s\\%s.txt"%(other_dir, current_symbol)
+					final_path = "%s/%s.txt"%(other_dir, current_symbol)
 				if os.path.exists(final_path):
 					append_write = 'a' # append if already exists
 				else:
@@ -56,11 +56,11 @@ class CalendarParser():
 	# Second and Sequential Time use
 	def loadCached(self, not_preferred=False):
 		self.earnings_map = {}
-		preferred_dir = self.dir + "\\preferred"
-		other_dir = self.dir + "\\other"
+		preferred_dir = self.dir + "/preferred"
+		other_dir = self.dir + "/other"
 		file_list = os.listdir(preferred_dir)
 		for ticker_file in file_list:
-			with open(preferred_dir + "\\" + ticker_file, 'r') as file:
+			with open(preferred_dir + "/" + ticker_file, 'r') as file:
 				earnings_dates = file.read()
 			earnings_dates_list = earnings_dates.split(",")
 			ticker = ticker_file.split(".")[0]
@@ -71,7 +71,7 @@ class CalendarParser():
 		if(not_preferred):
 			file_list = os.listdir(other_dir)
 			for ticker_file in file_list:
-				with open(other_dir + "\\" + ticker_file, 'r') as file:
+				with open(other_dir + "/" + ticker_file, 'r') as file:
 					earnings_dates = file.read()
 				earnings_dates_list = earnings_dates.split(",")
 				ticker = ticker_file.split(".")[0]
@@ -98,10 +98,10 @@ class CalendarParser():
 	# and return the day after so that the program can start from there
 	def getStartingDate(self):
 		last_latest_date = 0
-		preferred_dir = self.dir + "\\preferred"
-		other_dir = self.dir + "\\other"
-		preferred_path = "%s\\"%(preferred_dir)
-		other_path = "%s\\"%(other_dir)
+		preferred_dir = self.dir + "/preferred"
+		other_dir = self.dir + "/other"
+		preferred_path = "%s/"%(preferred_dir)
+		other_path = "%s/"%(other_dir)
 		preferred_files = os.listdir(preferred_path)
 		other_files = os.listdir(other_path)
 		# Search through both directories for the last date gathered for it

@@ -33,12 +33,12 @@ def start(arg = None):
             print('Was not able to pull price from Yahoo Finance for symbol %s' % symbol)
 
     try:
-        symbol_file = os.getcwd() + "\\earnings_call_difference_data\\%s.csv"%symbol
+        symbol_file = os.getcwd() + "/earnings_call_difference_data/%s.csv"%symbol
         csv_file = open(symbol_file, "r")
     except:
         import Strategy
         pull_list = Strategy.AM_PM_Change_Average(pull_list=[symbol], additional_pull=True)
-        symbol_file = os.getcwd() + "\\earnings_call_difference_data\\%s.csv"%symbol
+        symbol_file = os.getcwd() + "/earnings_call_difference_data/%s.csv"%symbol
         try:
             csv_file = open(symbol_file, "r")
         except:

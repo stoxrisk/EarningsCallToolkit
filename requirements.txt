@@ -1,5 +1,5 @@
 --index-url https://pypi.python.org/simple/
-\git+https://github.com/stoxrisk/tdameritradeapi.git
+git+https://github.com/stoxrisk/tdameritradeapi.git
 seaborn
 scipy
 pandas
