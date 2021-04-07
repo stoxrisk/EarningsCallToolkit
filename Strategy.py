@@ -34,7 +34,7 @@ class _csvRecorder:
                 print("Generating Earnings Call info for: " + symbol)
                 if earnings_data_map[symbol] == {}:
                     continue
-                final_path =  local_dir + "\\%s" % symbol + ".csv"
+                final_path =  local_dir + "/%s" % symbol + ".csv"
                 csv_str = "Earnings Dates: ,"
                 earnings_before_temp = []
                 earnings_after_temp = []
@@ -523,7 +523,7 @@ class Strategy():
 
     def generate_daily_csv_library(self, earnings_data_map, folder_name, local_dir, select=[]):
         csv = _csvRecorder(folder_name, None)
-        csv.generateSmallCSVs(earnings_data_map, local_dir + "\\%s"%folder_name, select)
+        csv.generateSmallCSVs(earnings_data_map, local_dir + "/%s"%folder_name, select)
 
 
 
@@ -554,7 +554,7 @@ def AM_strategy1(pull_list=None):
     am_strat_1 = Strategy(strategy_name, x_axis, csv_strat, after_market_strat_times, difference_instructions, "am")
 
     if pull_list and not os.path.exists(strategy_name+".json"):
-        cp = CalendarParser("white_list.txt", os.getcwd() + "\\dates")
+        cp = CalendarParser("white_list.txt", os.getcwd() + "/dates")
         cp.loadCached(False)
         am_strat_1.gather_data(cp.earnings_map, pull_list)
 
@@ -581,7 +581,7 @@ def AM_PM_Change_Average(pull_list=None, additional_pull=False):
     difference_instructions =  ["0:1"]
     AM_PM_Change_Average_strat = Strategy(strategy_name, None, None, None, difference_instructions, "am")
     local_dir = os.getcwd()
-    cp = CalendarParser("white_list.txt", local_dir + "\\dates")
+    cp = CalendarParser("white_list.txt", local_dir + "/dates")
     cp.loadCached(True)
     if pull_list and not os.path.exists(strategy_name + ".json"):    
         AM_PM_Change_Average_strat.gather_data(cp.earnings_map, pull_list, yahoo_daily=True)
