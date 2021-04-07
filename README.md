@@ -8,15 +8,15 @@ Current Stage: Beta
 
 ## Installation:
 
-export td_api_key={Your TD Ameritrade API key}
+`export td_api_key=<Your TD Ameritrade API key>`
 
-pip install -r requirements.txt
+`pip install -r requirements.txt`
 
 To utilize the strategies:
-python analyze.py <strategy_number> 
+`python analyze.py <strategy_number> `
 
 To use the option strike price estimator:
-python ./estimate_strikes.py <symbol>
+`python ./estimate_strikes.py <symbol>`
 
 
 ## Usage:
